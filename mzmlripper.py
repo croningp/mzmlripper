@@ -3,14 +3,17 @@ import sys
 import filetools
 from mzml_parser import MzmlParser
 
-def process_single_file(filename, out_dir):
-    MzmlParser(filename, out_dir).parse_file()
+
+def process_single_file(filename, out_dir, int_threshold=1000):
+    MzmlParser(filename, out_dir, int_threshold=int_threshold).parse_file()
+
 
 def process_multiple_files(data_folder, out_folder):
     for mzmlfile in filetools.list_files(data_folder):
         if not ".mzML" in mzmlfile:
             continue
         process_single_file(mzmlfile, out_folder)
+
 
 if __name__ == "__main__":
     if len(sys.argv) != 3:

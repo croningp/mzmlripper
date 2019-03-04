@@ -1,11 +1,10 @@
-import struct
 import zlib
+import struct
 import base64
 
-INTENSITY_THRESH = 1000.0
 
 class Spectrum(object):
-    def __init__(self):
+    def __init__(self, intensity_threshold):
         self.array_length = ""
         self.ms_level = ""
         self.parent = ""
@@ -14,6 +13,7 @@ class Spectrum(object):
         self.compression = ""
         self.mz = ""
         self.intensity = ""
+        self.intensity_threshold = intensity_threshold
         self.serialized = {}
 
 
@@ -57,7 +57,7 @@ class Spectrum(object):
         out = {}
         mass_list = []
         for mz, intensity in zip(self.mz, self.intensity):
-            if intensity > INTENSITY_THRESH:
+            if intensity > self.intensity_threshold:
                 out[f"{mz:.4f}"] = int(intensity)
                 mass_list.append(mz)
 

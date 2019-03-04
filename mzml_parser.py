@@ -1,5 +1,5 @@
-import re
 import os
+import re
 import sys
 import json
 from threading import Thread
@@ -64,15 +64,16 @@ class MzmlParser(object):
         output_dir {str} -- Location of where to save the JSON file
     """
 
-    def __init__(self, filename: str, output_dir: str):
+    def __init__(self, filename: str, output_dir: str, int_threshold=1000):
         self.filename = filename
-        self.output_dir = output_dir
+        self.output_dir = os.path.abspath(output_dir)
         self.in_spectrum = False
         self.re_expr = create_regex_mapper()
         self.spectra = []
         self.ms1 = []
         self.ms2 = []
-        self.spec = Spectrum()
+        self.spec = Spectrum(int_threshold)
+        self.spec_int_threshold = int_threshold
         self.curr_spec_bin_type = -1
 
 
@@ -131,8 +132,13 @@ class MzmlParser(object):
                 self.ms2.append(spec)
 
 
-    def build_output(self):
-        # TODO::Comment
+    def build_output(self) -> dict:
+        """Builds the MS data output from the MS1 and MS2 data
+        
+        Returns:
+            dict -- MS data
+        """
+
         output = {
             "ms1": {},
             "ms2": {}
@@ -169,14 +175,10 @@ class MzmlParser(object):
 
         # Write out
         if sys.platform == "posix":
-            name = self.filename.split("/")[0]
+            name = self.filename.split("/")[-1]
         else:
-            name = self.filename.split("\\")[0]
+            name = self.filename.split("\\")[-1]
         
-        # Create output directory if it doesnt exist already
-        if not os.path.exists(self.output_dir):
-            os.mkdir(self.output_dir)
-
         out_path = os.path.join(self.output_dir, name.replace(".mzML", ".json"))
         write_json(output, out_path)
 
@@ -202,7 +204,7 @@ class MzmlParser(object):
             if "</spectrum>" in line:
                 self.spectra.append(self.spec)
                 self.in_spectrum = False
-                self.spec = Spectrum()
+                self.spec = Spectrum(self.spec_int_threshold)
             else:
                 self.extract_information(line)
 
