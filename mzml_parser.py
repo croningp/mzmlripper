@@ -1,10 +1,10 @@
 import re
+import os
 import sys
 import json
 from threading import Thread
 from spectrum import Spectrum
 
-# TODO::Bulk processing of multiple mzML files
 
 def create_regex_mapper() -> dict:
     """Creates a mapping of tags to RegEx strings
@@ -54,17 +54,19 @@ def write_json(data: dict, filename: str):
         json.dump(data, f_d, indent=4)
 
 
-class Parser(object):
+class MzmlParser(object):
     """Class for parsing an mzML file.
 
     Extracts all MS1 and MS2 data, along with retention time and parent mass
 
     Arguments:
         filename {str} -- Name of the file to parse
+        output_dir {str} -- Location of where to save the JSON file
     """
 
-    def __init__(self, filename: str):
+    def __init__(self, filename: str, output_dir: str):
         self.filename = filename
+        self.output_dir = output_dir
         self.in_spectrum = False
         self.re_expr = create_regex_mapper()
         self.spectra = []
@@ -129,6 +131,30 @@ class Parser(object):
                 self.ms2.append(spec)
 
 
+    def build_output(self):
+        # TODO::Comment
+        output = {
+            "ms1": {},
+            "ms2": {}
+        }
+
+        ms1_out, ms2_out = output["ms1"], output["ms2"]
+        self.ms1 = sorted(self.ms1, key=lambda x: x.retention_time)
+        self.ms2 = sorted(self.ms2, key=lambda x: x.retention_time) 
+
+        for pos, spec in enumerate(self.ms1):
+            if not spec.serialized:
+                spec.process()
+            ms1_out[f"spectrum_{pos+1}"] = spec.serialized
+
+        for pos, spec in enumerate(self.ms2):
+            if not spec.serialized:
+                spec.process()
+            ms2_out[f"spectrum_{pos+1}"] = spec.serialized
+
+        return output
+
+
     def write_out_to_file(self, ms1: list, ms2: list):
         """Writes out the MS2 and MS2 data to JSON format
         
@@ -139,31 +165,20 @@ class Parser(object):
             ms2 {list} -- MS2 spectra
         """
 
-        output = {
-            "ms1": {},
-            "ms2": {}
-        }
-
-        ms1_out, ms2_out = output["ms1"], output["ms2"]
-
-        # Sort data based on retention time
-        ms1 = sorted(ms1, key=lambda x: x.retention_time)
-        ms2 = sorted(ms2, key=lambda x: x.retention_time)
-
-        # Process spectra if it hasn't been already and add to dict
-        for pos, spec in enumerate(ms1):
-            if not spec.serialized:
-                spec.process()
-            ms1_out[f"spectrum_{pos+1}"] = spec.serialized
-
-        # Process spectra if it hasn't been already and add to dict
-        for pos, spec in enumerate(ms2):
-            if not spec.serialized:
-                spec.process()
-            ms2_out[f"spectrum_{pos+1}"] = spec.serialized
+        output = self.build_output()
 
         # Write out
-        write_json(output, self.filename.replace(".mzML", ".json"))
+        if sys.platform == "posix":
+            name = self.filename.split("/")[0]
+        else:
+            name = self.filename.split("\\")[0]
+        
+        # Create output directory if it doesnt exist already
+        if not os.path.exists(self.output_dir):
+            os.mkdir(self.output_dir)
+
+        out_path = os.path.join(self.output_dir, name.replace(".mzML", ".json"))
+        write_json(output, out_path)
 
 
     def process_line(self, line: str):
@@ -256,7 +271,3 @@ class Parser(object):
                 raise Exception("Error setting binary type")
         else:
             return
-
-if __name__ == "__main__":
-    p = Parser(sys.argv[1])
-    p.parse_file()
