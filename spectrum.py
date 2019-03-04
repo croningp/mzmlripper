@@ -2,6 +2,7 @@ import struct
 import zlib
 import base64
 
+INTENSITY_THRESH = 1000.0
 
 class Spectrum(object):
     def __init__(self):
@@ -34,8 +35,8 @@ class Spectrum(object):
         self.intensity = base64.b64decode(self.intensity)
 
         self.mz = zlib.decompress(self.mz)
-        self.intensity =  zlib.decompress(self.intensity)
-        
+        self.intensity = zlib.decompress(self.intensity)
+
         self.mz = list(
             struct.unpack(
                 f"<{self.array_length}{self.d_type}",
@@ -54,12 +55,13 @@ class Spectrum(object):
     def serialize(self) -> dict:
         out = {}
         for mz, intensity in zip(self.mz, self.intensity):
-            out[f"{mz:.4f}"] = int(intensity)
+            if intensity > INTENSITY_THRESH:
+                out[f"{mz:.4f}"] = int(intensity)
 
         out["retention_time"] = self.retention_time
         out["mass_list"] = [f"{mass:.4f}" for mass in self.mz]
 
         if self.parent:
             out["parent"] = self.parent
-        
+
         return out

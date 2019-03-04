@@ -1,9 +1,10 @@
 import re
 import sys
 import json
+from multiprocessing import Process
+from threading import Lock, Thread
 from spectrum import Spectrum
 
-# TODO::Multiprocess the spectra analysis
 # TODO::Bulk processing of multiple mzML files
 
 def create_regex_mapper() -> dict:
@@ -22,10 +23,15 @@ def value_finder(regex: str, line: str) -> str:
     if result:
         return result.group(1)
     return None
-    
+
 def write_json(data, filename):
     with open(filename, "w") as f_d:
         json.dump(data, f_d, indent=4)
+
+
+def split_list(data, size):
+    for i in range(0, len(data), size):
+        yield data[i:i + size]
 
 
 class Parser(object):
@@ -34,6 +40,7 @@ class Parser(object):
         self.in_spectrum = False
         self.re_expr = create_regex_mapper()
         self.spectra = []
+        self.out_spectra = []
         self.spec = Spectrum()
         self.curr_spec_bin_type = -1
 
@@ -46,23 +53,48 @@ class Parser(object):
 
         print(f"Parsing complete!\nTotal Spectra: {len(self.spectra)}")
         print("Processing...")
-        for spectrum in self.spectra:
+        self.bulk_process()
+        self.post_process()
+        print("Complete!")
+
+
+    def bulk_process(self):
+        process_pool = []
+        data_pool = list(
+            split_list(
+                self.spectra,
+                int(len(self.spectra)/4)
+            )
+        )
+
+        for spectra_list in data_pool:
+            p = Thread(target=self.process_spectra, args=(spectra_list,))
+            process_pool.append(p)
+            p.start()
+
+        for process in process_pool:
+            process.join()
+
+
+    def process_spectra(self, spectra):
+        for pos, spectrum in enumerate(spectra):
             spectrum.process()
+            self.out_spectra.append(spectrum)
+            spectra.pop(pos)
 
 
-    def process_spectra(self):
+
+    def post_process(self):
         ms1, ms2 = [], []
-        for spectrum in self.spectra:
-            spectrum.process()
-
+        for spectrum in self.out_spectra:
             if spectrum.ms_level == "1":
                 ms1.append(spectrum)
             elif spectrum.ms_level == "2":
                 ms2.append(spectrum)
 
         self.write_out_to_file(ms1, ms2)
-        
-        
+
+
     def write_out_to_file(self, ms1, ms2):
         output = {
             "ms1": {},
@@ -73,12 +105,11 @@ class Parser(object):
 
         for pos, spec in enumerate(ms1):
             ms1_out[f"spectrum_{pos+1}"] = spec.serialized
-        
+
         for pos, spec in enumerate(ms2):
             ms2_out[f"spectrum_{pos+1}"] = spec.serialized
 
         write_json(output, self.filename.replace(".mzML", ".json"))
-        print("Complete!")
 
 
     def process_line(self, line: str):
@@ -131,3 +162,7 @@ class Parser(object):
                 raise Exception("Error setting binary type")
         else:
             return
+
+if __name__ == "__main__":
+    p = Parser(sys.argv[1])
+    p.parse_file()
