@@ -34,8 +34,9 @@ class Spectrum(object):
         self.mz = base64.b64decode(self.mz)
         self.intensity = base64.b64decode(self.intensity)
 
-        self.mz = zlib.decompress(self.mz)
-        self.intensity = zlib.decompress(self.intensity)
+        if "zlib" in self.compression:
+            self.mz = zlib.decompress(self.mz)
+            self.intensity = zlib.decompress(self.intensity)
 
         self.mz = list(
             struct.unpack(

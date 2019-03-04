@@ -55,6 +55,14 @@ def write_json(data: dict, filename: str):
 
 
 class Parser(object):
+    """Class for parsing an mzML file.
+
+    Extracts all MS1 and MS2 data, along with retention time and parent mass
+
+    Arguments:
+        filename {str} -- Name of the file to parse
+    """
+
     def __init__(self, filename: str):
         self.filename = filename
         self.in_spectrum = False
@@ -67,13 +75,18 @@ class Parser(object):
 
 
     def parse_file(self):
+        """Reads the file line by line and obtains all information
+
+        Data is then bulk processed by MS level
+        """
+
         with open(self.filename) as f_d:
             print(f"Parsing file: {self.filename}...")
             for line in f_d.readlines():
                 self.process_line(line)
 
         print(f"Parsing complete!\nTotal Spectra: {len(self.spectra)}")
-        print("Processing...")
+        print("Processing spectra...")
         ms1 = [spec for spec in self.spectra if spec.ms_level == "1"]
         ms2 = [spec for spec in self.spectra if spec.ms_level == "2"]
 
@@ -83,6 +96,13 @@ class Parser(object):
 
 
     def bulk_process(self, ms1: list, ms2: list):
+        """Creates threads for processing MS1 and MS2 data simultaneously
+        
+        Arguments:
+            ms1 {list} -- MS1 data
+            ms2 {list} -- MS2 data
+        """
+
         t1 = Thread(target=self.process_spectra, args=(ms1,))
         t2 = Thread(target=self.process_spectra, args=(ms2,))
 
@@ -94,6 +114,12 @@ class Parser(object):
 
 
     def process_spectra(self, spectra: list):
+        """Processes spectra from a list and serialises the data
+
+        Arguments:
+            spectra {list} -- List of Spectra
+        """
+
         for spec in spectra:
             spec.process()
             spec = spectra.pop(0)
@@ -104,29 +130,57 @@ class Parser(object):
 
 
     def write_out_to_file(self, ms1: list, ms2: list):
+        """Writes out the MS2 and MS2 data to JSON format
+        
+        If any spectra are not processed, they are processed here
+
+        Arguments:
+            ms1 {list} -- MS1 spectra
+            ms2 {list} -- MS2 spectra
+        """
+
         output = {
             "ms1": {},
             "ms2": {}
         }
 
         ms1_out, ms2_out = output["ms1"], output["ms2"]
+
+        # Sort data based on retention time
         ms1 = sorted(ms1, key=lambda x: x.retention_time)
         ms2 = sorted(ms2, key=lambda x: x.retention_time)
 
+        # Process spectra if it hasn't been already and add to dict
         for pos, spec in enumerate(ms1):
             if not spec.serialized:
                 spec.process()
             ms1_out[f"spectrum_{pos+1}"] = spec.serialized
 
+        # Process spectra if it hasn't been already and add to dict
         for pos, spec in enumerate(ms2):
             if not spec.serialized:
                 spec.process()
             ms2_out[f"spectrum_{pos+1}"] = spec.serialized
 
+        # Write out
         write_json(output, self.filename.replace(".mzML", ".json"))
 
 
     def process_line(self, line: str):
+        """Processes a line from mzML
+
+        Checks if we are in a spectrum or not
+        If we're not in a spectrum, check for spectrum tag and pull information
+
+        Continuously check if we've reached the end tag of the spectrum and add the
+        spectrum to a list
+
+        If we're in a spectrum and not reached the end tag, check and pull relevant information
+        
+        Arguments:
+            line {str} -- Line form mzML
+        """
+
         if not self.in_spectrum:
             self.start_spectrum(line)
         else:
@@ -139,6 +193,16 @@ class Parser(object):
 
 
     def start_spectrum(self, line: str):
+        """Initiates the spectrum data gathering process
+
+        Check we get a match for spectrum index tag
+        If not, we've got junk and just return
+        If we are, extract all information from that line
+        
+        Arguments:
+            line {str} -- Line form mzML
+        """
+
         spec_id = value_finder(self.re_expr["spec_index"], line)
         if not spec_id:
             return
@@ -151,6 +215,22 @@ class Parser(object):
         )
 
     def extract_information(self, line: str):
+        """Attempts to extract information from a given line
+
+        Information here:
+        Retention Time
+        32 or 64 bit data
+        Type of compression
+        MZ data
+        Intensity Data
+        
+        Arguments:
+            line {str} -- Line from mzML
+        
+        Raises:
+            Exception -- unable to determine what kind of binary data we're looking at
+        """
+
         if "ms level" in line:
             self.spec.ms_level = value_finder(self.re_expr["value"], line)
         elif "scan start time" in line:
