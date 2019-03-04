@@ -54,12 +54,14 @@ class Spectrum(object):
 
     def serialize(self) -> dict:
         out = {}
+        mass_list = []
         for mz, intensity in zip(self.mz, self.intensity):
             if intensity > INTENSITY_THRESH:
                 out[f"{mz:.4f}"] = int(intensity)
+                mass_list.append(mz)
 
         out["retention_time"] = self.retention_time
-        out["mass_list"] = [f"{mass:.4f}" for mass in self.mz]
+        out["mass_list"] = [float(f"{mass:.4f}") for mass in mass_list]
 
         if self.parent:
             out["parent"] = self.parent

@@ -1,13 +1,18 @@
 import re
 import sys
 import json
-from multiprocessing import Process
-from threading import Lock, Thread
+from threading import Thread
 from spectrum import Spectrum
 
 # TODO::Bulk processing of multiple mzML files
 
 def create_regex_mapper() -> dict:
+    """Creates a mapping of tags to RegEx strings
+
+    Returns:
+        dict -- Mapping of tags to RegEx
+    """
+
     return {
         "spec_index": r'index="(.+?)"',
         "array_length": r'defaultArrayLength="(.+?)"',
@@ -18,20 +23,35 @@ def create_regex_mapper() -> dict:
 
 
 def value_finder(regex: str, line: str) -> str:
+    """Finds a value using RegEx from a given line
+
+    Returns None if nothing found
+
+    Arguments:
+        regex {str} -- RegEx string
+        line {str} -- Line to parse
+    
+    Returns:
+        str -- Match if found, None if not
+    """
+
     result = re.search(regex, line)
 
     if result:
         return result.group(1)
     return None
 
-def write_json(data, filename):
+
+def write_json(data: dict, filename: str):
+    """Writes data to JSON file
+
+    Arguments:
+        data {dict} -- Data to write
+        filename {str} -- Name fo the file
+    """
+
     with open(filename, "w") as f_d:
         json.dump(data, f_d, indent=4)
-
-
-def split_list(data, size):
-    for i in range(0, len(data), size):
-        yield data[i:i + size]
 
 
 class Parser(object):
@@ -40,7 +60,8 @@ class Parser(object):
         self.in_spectrum = False
         self.re_expr = create_regex_mapper()
         self.spectra = []
-        self.out_spectra = []
+        self.ms1 = []
+        self.ms2 = []
         self.spec = Spectrum()
         self.curr_spec_bin_type = -1
 
@@ -53,60 +74,53 @@ class Parser(object):
 
         print(f"Parsing complete!\nTotal Spectra: {len(self.spectra)}")
         print("Processing...")
-        self.bulk_process()
-        self.post_process()
+        ms1 = [spec for spec in self.spectra if spec.ms_level == "1"]
+        ms2 = [spec for spec in self.spectra if spec.ms_level == "2"]
+
+        self.bulk_process(ms1, ms2)
+        self.write_out_to_file(self.ms1, self.ms2)
         print("Complete!")
 
 
-    def bulk_process(self):
-        process_pool = []
-        data_pool = list(
-            split_list(
-                self.spectra,
-                int(len(self.spectra)/4)
-            )
-        )
+    def bulk_process(self, ms1: list, ms2: list):
+        t1 = Thread(target=self.process_spectra, args=(ms1,))
+        t2 = Thread(target=self.process_spectra, args=(ms2,))
 
-        for spectra_list in data_pool:
-            p = Thread(target=self.process_spectra, args=(spectra_list,))
-            process_pool.append(p)
-            p.start()
+        t1.start()
+        t2.start()
 
-        for process in process_pool:
-            process.join()
+        t1.join()
+        t2.join()
 
 
-    def process_spectra(self, spectra):
-        for pos, spectrum in enumerate(spectra):
-            spectrum.process()
-            self.out_spectra.append(spectrum)
-            spectra.pop(pos)
+    def process_spectra(self, spectra: list):
+        for spec in spectra:
+            spec.process()
+            spec = spectra.pop(0)
+            if spec.ms_level == "1":
+                self.ms1.append(spec)
+            elif spec.ms_level == "2":
+                self.ms2.append(spec)
 
 
-
-    def post_process(self):
-        ms1, ms2 = [], []
-        for spectrum in self.out_spectra:
-            if spectrum.ms_level == "1":
-                ms1.append(spectrum)
-            elif spectrum.ms_level == "2":
-                ms2.append(spectrum)
-
-        self.write_out_to_file(ms1, ms2)
-
-
-    def write_out_to_file(self, ms1, ms2):
+    def write_out_to_file(self, ms1: list, ms2: list):
         output = {
             "ms1": {},
             "ms2": {}
         }
 
         ms1_out, ms2_out = output["ms1"], output["ms2"]
+        ms1 = sorted(ms1, key=lambda x: x.retention_time)
+        ms2 = sorted(ms2, key=lambda x: x.retention_time)
 
         for pos, spec in enumerate(ms1):
+            if not spec.serialized:
+                spec.process()
             ms1_out[f"spectrum_{pos+1}"] = spec.serialized
 
         for pos, spec in enumerate(ms2):
+            if not spec.serialized:
+                spec.process()
             ms2_out[f"spectrum_{pos+1}"] = spec.serialized
 
         write_json(output, self.filename.replace(".mzML", ".json"))
