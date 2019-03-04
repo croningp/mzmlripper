@@ -3,6 +3,9 @@ import sys
 import json
 from spectrum import Spectrum
 
+# TODO::Multiprocess the spectra analysis
+# TODO::Bulk processing of multiple mzML files
+
 def create_regex_mapper() -> dict:
     return {
         "spec_index": r'index="(.+?)"',
@@ -128,7 +131,3 @@ class Parser(object):
                 raise Exception("Error setting binary type")
         else:
             return
-
-
-if __name__ == "__main__":
-    p = Parser(sys.argv[1]).parse_file()
