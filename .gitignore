@@ -1,0 +1,4 @@
+*.mzML
+__pycache__/
+.vscode/
+*.json
