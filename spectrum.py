@@ -93,10 +93,16 @@ class Spectrum(object):
 
         out = {}
         mass_list = []
+
         for mz, intensity in zip(self.mz, self.intensity):
-            if intensity > self.intensity_threshold:
-                out[f"{mz:.4f}"] = int(intensity)
-                mass_list.append(mz)
+            if self.ms_level == "1":
+                if intensity > self.intensity_threshold:
+                    out[f"{mz:.4f}"] = int(intensity)
+                    mass_list.append(mz)
+            elif self.ms_level == "2":
+                if intensity > (self.intensity_threshold/100) * 5:
+                    out[f"{mz:.4f}"] = int(intensity)
+                    mass_list.append(mz)
 
         out["retention_time"] = self.retention_time
         out["mass_list"] = [float(f"{mass:.4f}") for mass in mass_list]
