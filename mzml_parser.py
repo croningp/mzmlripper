@@ -30,7 +30,7 @@ def value_finder(regex: str, line: str) -> str:
     Arguments:
         regex {str} -- RegEx string
         line {str} -- Line to parse
-    
+
     Returns:
         str -- Match if found, None if not
     """
