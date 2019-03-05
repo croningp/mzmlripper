@@ -1,3 +1,20 @@
+"""Module for parsing mzML files
+Reads file line by line and extracts out all relevant information
+Information being MS1 and MS2 spectra data
+
+Extracts:
+    M/z List
+    Intensity List
+    Parent mass
+    Mass List
+    Retention Time
+
+.. moduleauthor:: Graham Keenan 2019
+.. signature:: dd383a145d9a2425c23afc00c04dc054951b13c76b6138c6373597b9bf55c007
+
+"""
+
+
 import os
 import re
 import sys
@@ -94,13 +111,15 @@ class MzmlParser(object):
         ms2 = [spec for spec in self.spectra if spec.ms_level == "2"]
 
         self.bulk_process(ms1, ms2)
-        self.write_out_to_file(self.ms1, self.ms2)
+        output = self.write_out_to_file(self.ms1, self.ms2)
         print("Complete!")
+
+        return output
 
 
     def bulk_process(self, ms1: list, ms2: list):
         """Creates threads for processing MS1 and MS2 data simultaneously
-        
+
         Arguments:
             ms1 {list} -- MS1 data
             ms2 {list} -- MS2 data
@@ -125,7 +144,6 @@ class MzmlParser(object):
 
         for spec in spectra:
             spec.process()
-            spec = spectra.pop(0)
             if spec.ms_level == "1":
                 self.ms1.append(spec)
             elif spec.ms_level == "2":
@@ -134,7 +152,7 @@ class MzmlParser(object):
 
     def build_output(self) -> dict:
         """Builds the MS data output from the MS1 and MS2 data
-        
+
         Returns:
             dict -- MS data
         """
@@ -146,7 +164,7 @@ class MzmlParser(object):
 
         ms1_out, ms2_out = output["ms1"], output["ms2"]
         self.ms1 = sorted(self.ms1, key=lambda x: x.retention_time)
-        self.ms2 = sorted(self.ms2, key=lambda x: x.retention_time) 
+        self.ms2 = sorted(self.ms2, key=lambda x: x.retention_time)
 
         for pos, spec in enumerate(self.ms1):
             if not spec.serialized:
@@ -163,7 +181,7 @@ class MzmlParser(object):
 
     def write_out_to_file(self, ms1: list, ms2: list):
         """Writes out the MS2 and MS2 data to JSON format
-        
+
         If any spectra are not processed, they are processed here
 
         Arguments:
@@ -174,13 +192,15 @@ class MzmlParser(object):
         output = self.build_output()
 
         # Write out
-        if sys.platform == "posix":
+        if sys.platform == "linux":
             name = self.filename.split("/")[-1]
         else:
             name = self.filename.split("\\")[-1]
-        
+
         out_path = os.path.join(self.output_dir, name.replace(".mzML", ".json"))
         write_json(output, out_path)
+
+        return output
 
 
     def process_line(self, line: str):
@@ -193,7 +213,7 @@ class MzmlParser(object):
         spectrum to a list
 
         If we're in a spectrum and not reached the end tag, check and pull relevant information
-        
+
         Arguments:
             line {str} -- Line form mzML
         """
@@ -215,7 +235,7 @@ class MzmlParser(object):
         Check we get a match for spectrum index tag
         If not, we've got junk and just return
         If we are, extract all information from that line
-        
+
         Arguments:
             line {str} -- Line form mzML
         """
@@ -240,10 +260,10 @@ class MzmlParser(object):
         Type of compression
         MZ data
         Intensity Data
-        
+
         Arguments:
             line {str} -- Line from mzML
-        
+
         Raises:
             Exception -- unable to determine what kind of binary data we're looking at
         """
