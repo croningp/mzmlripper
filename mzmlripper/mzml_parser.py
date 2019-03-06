@@ -20,7 +20,7 @@ import re
 import sys
 import json
 from threading import Thread
-from spectrum import Spectrum
+from .spectrum import Spectrum
 
 
 def create_regex_mapper() -> dict:

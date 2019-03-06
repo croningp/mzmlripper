@@ -11,7 +11,7 @@ Single processing and bulk processing available.
 
 import sys
 import filetools
-from mzml_parser import MzmlParser
+from .mzml_parser import MzmlParser
 
 
 def process_single_file(filename: str, out_dir: str, int_threshold=1000):
