@@ -108,6 +108,6 @@ class Spectrum(object):
         out["mass_list"] = [float(f"{mass:.4f}") for mass in mass_list]
 
         if self.parent:
-            out["parent"] = self.parent
+            out["parent"] = f"{float(self.parent):.4f}"
 
         return out
