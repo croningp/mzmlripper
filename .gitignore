@@ -5,3 +5,4 @@ __pycache__/
 mzmlripper.egg-info/
 build/
 dist/
+tests/

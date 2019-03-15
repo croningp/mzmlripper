@@ -89,6 +89,7 @@ class MzmlParser(object):
         self.spectra = []
         self.ms1 = []
         self.ms2 = []
+        self.ms3, self.ms4 = [], []
         self.spec = Spectrum(int_threshold)
         self.spec_int_threshold = int_threshold
         self.curr_spec_bin_type = -1
@@ -109,30 +110,40 @@ class MzmlParser(object):
         print("Processing spectra...")
         ms1 = [spec for spec in self.spectra if spec.ms_level == "1"]
         ms2 = [spec for spec in self.spectra if spec.ms_level == "2"]
+        ms3 = [spec for spec in self.spectra if spec.ms_level == "3"]
+        ms4 = [spec for spec in self.spectra if spec.ms_level == "4"]
 
-        self.bulk_process(ms1, ms2)
-        output = self.write_out_to_file(self.ms1, self.ms2)
+        self.bulk_process(ms1, ms2, ms3, ms4)
+        output = self.write_out_to_file()
         print("Complete!")
 
         return output
 
 
-    def bulk_process(self, ms1: list, ms2: list):
+    def bulk_process(self, ms1: list, ms2: list, ms3: list, ms4: list):
         """Creates threads for processing MS1 and MS2 data simultaneously
 
         Arguments:
             ms1 {list} -- MS1 data
             ms2 {list} -- MS2 data
+            ms3 {list} -- MS3 data
+            ms4 {list} -- MS4 data
         """
 
         t1 = Thread(target=self.process_spectra, args=(ms1,))
         t2 = Thread(target=self.process_spectra, args=(ms2,))
+        t3 = Thread(target=self.process_spectra, args=(ms3,))
+        t4 = Thread(target=self.process_spectra, args=(ms4,))
 
         t1.start()
         t2.start()
+        t3.start()
+        t4.start()
 
         t1.join()
         t2.join()
+        t3.join()
+        t4.join()
 
 
     def process_spectra(self, spectra: list):
@@ -148,6 +159,10 @@ class MzmlParser(object):
                 self.ms1.append(spec)
             elif spec.ms_level == "2":
                 self.ms2.append(spec)
+            elif spec.ms_level == "3":
+                self.ms3.append(spec)
+            elif spec.ms_level == "4":
+                self.ms4.append(spec)
 
 
     def build_output(self) -> dict:
@@ -159,12 +174,20 @@ class MzmlParser(object):
 
         output = {
             "ms1": {},
-            "ms2": {}
+            "ms2": {},
+            "ms3": {},
+            "ms4": {}
         }
 
-        ms1_out, ms2_out = output["ms1"], output["ms2"]
+        ms1_out = output["ms1"]
+        ms2_out = output["ms2"]
+        ms3_out = output["ms3"]
+        ms4_out = output["ms4"]
+
         self.ms1 = sorted(self.ms1, key=lambda x: x.retention_time)
         self.ms2 = sorted(self.ms2, key=lambda x: x.retention_time)
+        self.ms3 = sorted(self.ms3, key=lambda x: x.retention_time)
+        self.ms4 = sorted(self.ms4, key=lambda x: x.retention_time)
 
         for pos, spec in enumerate(self.ms1):
             if not spec.serialized:
@@ -176,10 +199,20 @@ class MzmlParser(object):
                 spec.process()
             ms2_out[f"spectrum_{pos+1}"] = spec.serialized
 
+        for pos, spec in enumerate(self.ms3):
+            if not spec.serialized:
+                spec.process()
+            ms3_out[f"spectrum_{pos+1}"] = spec.serialized
+
+        for pos, spec in enumerate(self.ms4):
+            if not spec.serialized:
+                spec.process()
+            ms4_out[f"spectrum_{pos+1}"] = spec.serialized
+
         return output
 
 
-    def write_out_to_file(self, ms1: list, ms2: list):
+    def write_out_to_file(self):
         """Writes out the MS2 and MS2 data to JSON format
 
         If any spectra are not processed, they are processed here
@@ -192,10 +225,7 @@ class MzmlParser(object):
         output = self.build_output()
 
         # Write out
-        if sys.platform == "linux":
-            name = self.filename.split("/")[-1]
-        else:
-            name = self.filename.split("\\")[-1]
+        name = self.filename.split(os.sep)[-1]
 
         out_path = os.path.join(self.output_dir, name.replace(".mzML", ".json"))
         write_json(output, out_path)
@@ -278,6 +308,9 @@ class MzmlParser(object):
             self.spec.compression = value_finder(self.re_expr["name"], line)
         elif "selected ion m/z" in line:
             self.spec.parent = value_finder(self.re_expr["value"], line)
+        elif "MS:1000512" in line:
+            suggested_parent = value_finder(self.re_expr["value"], line)
+            self.update_parent(suggested_parent)
         elif "m/z array" in line:
             self.curr_spec_bin_type = 0
         elif "intensity array" in line:
@@ -293,3 +326,14 @@ class MzmlParser(object):
                 raise Exception("Error setting binary type")
         else:
             return
+
+
+    def update_parent(self, filter_string):
+        if int(self.spec.ms_level) < 3:
+            return
+
+        parents = filter_string.split("@")
+        if self.spec.ms_level == "3":
+            self.spec.parent = parents[1].split(" ")[-1]
+        elif self.spec.ms_level == "4":
+            self.spec.parent = parents[2].split(" ")[-1]

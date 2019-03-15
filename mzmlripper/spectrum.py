@@ -99,7 +99,7 @@ class Spectrum(object):
                 if intensity > self.intensity_threshold:
                     out[f"{mz:.4f}"] = int(intensity)
                     mass_list.append(mz)
-            elif self.ms_level == "2":
+            elif self.ms_level > "1":
                 if intensity > (self.intensity_threshold/100) * 5:
                     out[f"{mz:.4f}"] = int(intensity)
                     mass_list.append(mz)
