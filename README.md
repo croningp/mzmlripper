@@ -5,7 +5,9 @@ Extracts the following information:
 
 * MS1 Information
 * MS2 Information
-* For each spectrum in MS1/2:
+* MS3 Information
+* MS4 Information
+* For each spectrum in MS1/2/3/4:
     * Masses and Intensities
     * Parent of that spectrum
     * Retention time of that spectrum
@@ -32,6 +34,7 @@ pip install git+http://datalore.chem.gla.ac.uk/Origins/mzmlripper.git --user
 Import the extractor and give it a file/directory and an output directory for the JSON files
 
 ```python
+# Import module
 import mzmlripper.extractor as mzml
 
 # Running on a single file
@@ -81,6 +84,46 @@ The file output is in the following format:
                 101.2356,
                 102.5398,
                 102.9856,
+                ...
+            ]
+        },
+        "spectrum_2": {
+            ...
+        },
+        ...
+    },
+    "ms3": {
+        "spectrum_1": {
+            "67.3434": 142,
+            "69.8364": 1325,
+            "72.9746": 3320,
+            ...
+            "parent": "102.2365",
+            "retention_time": "1.0253",
+            "mass_list": [
+                67.3434,
+                69.8364,
+                72.9746,
+                ...
+            ]
+        },
+        "spectrum_2": {
+            ...
+        },
+        ...
+    },
+    "ms4": {
+        "spectrum_1": {
+            "45.2036": 1234,
+            "46.3210": 8853,
+            "49.3205": 12342,
+            ...
+            "parent": "115.3256",
+            "retention_time": "2.0365",
+            "mass_list": [
+                45.2036,
+                46.3120,
+                49.3205,
                 ...
             ]
         },
