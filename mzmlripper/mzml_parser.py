@@ -224,7 +224,6 @@ class MzmlParser(object):
 
         output = self.build_output()
 
-        # Write out
         name = self.filename.split(os.sep)[-1]
 
         out_path = os.path.join(self.output_dir, name.replace(".mzML", ".json"))
@@ -328,7 +327,13 @@ class MzmlParser(object):
             return
 
 
-    def update_parent(self, filter_string):
+    def update_parent(self, filter_string: str):
+        """Updates the parent for MS3 and above
+
+        Arguments:
+            filter_string {str} -- String contianing parent
+        """
+
         if int(self.spec.ms_level) < 3:
             return
 
