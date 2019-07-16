@@ -1,1 +1,0 @@
--e git+http://datalore.chem.gla.ac.uk/Chemobot/filetools#egg=filetools
