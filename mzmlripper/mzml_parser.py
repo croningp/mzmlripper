@@ -101,6 +101,7 @@ class MzmlParser(object):
         Data is then bulk processed by MS level
         """
 
+        # TODO::Add error handling on non-mzML files
         with open(self.filename) as f_d:
             print(f"Parsing file: {self.filename}...")
             for line in f_d.readlines():
