@@ -100,6 +100,13 @@ class MzmlParser(object):
 
 
     def _check_file(self):
+        """Checks if a file is valid for the parser
+        Checks if the file is actually a file and if it is an mzML file
+
+        Raises:
+            InvalidInputFile: File is invalid
+        """
+
         if not os.path.isfile(self.filename) or not self.filename.endswith(".mzML"):
             raise InvalidInputFile(f"File {self.filename} is not valid!")
 
@@ -237,6 +244,7 @@ class MzmlParser(object):
 
         name = self.filename.split(os.sep)[-1]
 
+        name = "ripper_" + name
         out_path = os.path.join(self.output_dir, name.replace(".mzML", ".json"))
         write_json(output, out_path)
 
