@@ -9,7 +9,7 @@ Extracts:
     Mass List
     Retention Time
 
-.. moduleauthor:: Graham Keenan 2019
+.. moduleauthor:: Graham Keenan (Cronin Group 2019) <graham.keenan@glasgow.ac.uk>
 .. signature:: dd383a145d9a2425c23afc00c04dc054951b13c76b6138c6373597b9bf55c007
 
 """
@@ -17,7 +17,6 @@ Extracts:
 
 import os
 import re
-import sys
 import json
 from threading import Thread
 from .spectrum import Spectrum
@@ -71,6 +70,11 @@ def write_json(data: dict, filename: str):
         json.dump(data, f_d, indent=4)
 
 
+class InvalidInputFile(Exception):
+    """Exception for invalid file formats
+    """
+
+
 class MzmlParser(object):
     """Class for parsing an mzML file.
 
@@ -95,13 +99,19 @@ class MzmlParser(object):
         self.curr_spec_bin_type = -1
 
 
+    def _check_file(self):
+        if not os.path.isfile(self.filename) or not self.filename.endswith(".mzML"):
+            raise InvalidInputFile(f"File {self.filename} is not valid!")
+
+
     def parse_file(self):
         """Reads the file line by line and obtains all information
 
         Data is then bulk processed by MS level
         """
 
-        # TODO::Add error handling on non-mzML files
+        self._check_file()
+
         with open(self.filename) as f_d:
             print(f"Parsing file: {self.filename}...")
             for line in f_d.readlines():

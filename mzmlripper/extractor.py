@@ -2,9 +2,9 @@
 Parses the file to extrac tinformation and saves it to a JSON file
 Single processing and bulk processing available.
 
-.. note:: Can be RAM intensive (Fixable)
+.. note:: Can be RAM intensive on larger file sizes
 
-.. moduleauthor:: Graham Keenan 2019
+.. moduleauthor:: Graham Keenan (Cronin Group 2019) <graham.keenan@glasgow.ac.uk>
 .. signature:: dd383a145d9a2425c23afc00c04dc054951b13c76b6138c6373597b9bf55c007
 
 """
