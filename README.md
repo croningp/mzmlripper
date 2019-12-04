@@ -174,6 +174,4 @@ All software was written as part of the [Cronin Lab 2019](http://www.chem.gla.ac
 
 ## License
 
-![[MIT]()]()
-
 [![MIT](https://upload.wikimedia.org/wikipedia/commons/thumb/0/0c/MIT_logo.svg/220px-MIT_logo.svg.png)](https://opensource.org/licenses/MIT)
