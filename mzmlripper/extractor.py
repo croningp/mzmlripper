@@ -20,7 +20,7 @@ def process_mzml_file(filename: str, out_dir: str, int_threshold=1000):
         out_dir {str} -- Directory to store the output
 
     Keyword Arguments:
-        int_threshold {int} -- [description] (default: {1000})
+        int_threshold {int} -- Intensity threshold for peaks (default: {1000})
     """
 
     return MzmlParser(filename, out_dir, int_threshold=int_threshold).parse_file()

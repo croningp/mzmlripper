@@ -1,17 +1,23 @@
 # MzML Ripper
 
-This package parses a single MzML or multiple MzML files and extracts data into JSON format for that file.
+This package parses MzML files and extracts data into JSON format for easier processing.
+
+
 Extracts the following information:
 
 * MS1 Information
 * MS2 Information
 * MS3 Information
 * MS4 Information
+
+
 * For each spectrum in MS1/2/3/4:
     * Masses and Intensities
     * Parent of that spectrum
     * Retention time of that spectrum
     * List of masses
+
+---
 
 ## Installation
 
@@ -38,23 +44,27 @@ python setup.py install
 
 ```
 
+---
+
 ## Usage
 
 Import the extractor and give it a file/directory and an output directory for the JSON files
 
 ```python
 # Import module
-import mzmlripper.extractor as mzml
+import mzmlripper.extractor as ripper
 
-# Running on a single file
-# Give a mzML filename and an output directory
-data = mzml.process_single_file("filename.mzML", "json_output/")
+# Process an mzML file
+ripper_data = ripper.process_mzml_file(mzml_filename, target_directory)
 
-# Running on multiple files
-# Give a directory containing mzMLs and a directory for output
-mzml.process_multiple_files("mzml_dir/", "json_output/")
+# Using the pySPLASH functions
+import mzmlripper.splash_helpers as spl
+
+# Add splash to each ripper function
+splashed_ripper_data = spl.splash_ripper_dict(ripper_data)
 
 ```
+---
 
 ## Output
 The file output is in the following format:
@@ -68,7 +78,7 @@ The file output is in the following format:
             "110.8476": 640253,
             ...
             "parent": "",
-            "retention_time": "0.9685"
+            "retention_time": "0.9685",
             "mass_list": [
                 95.3423,
                 96.8473,
@@ -142,3 +152,23 @@ The file output is in the following format:
         ...
     }
 }
+```
+---
+
+## Authors
+
+All software was written as part of the [Cronin Lab 2019](http://www.chem.gla.ac.uk/cronin/)
+
+* [Graham Keenan](mailto:Graham.Keenan@glasgow.ac.uk)
+* [Dr. David Doran](mailto:d.doran.1@research.gla.ac.uk)
+* [Dr. Cole Mathis](mailto:Cole.Mathis@glasgow.ac.uk)
+
+---
+
+## Contributions
+
+* [Dr. Emma Carrick](mailto:Emma.Carrick@glasgow.ac.uk)
+
+
+---
+![alt](https://upload.wikimedia.org/wikipedia/commons/thumb/0/0c/MIT_logo.svg/1920px-MIT_logo.svg.png){height=50% width=50%}
