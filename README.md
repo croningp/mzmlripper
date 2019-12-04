@@ -28,6 +28,15 @@ Or download directly from Pip:
 pip install git+http://datalore.chem.gla.ac.uk/Origins/mzmlripper.git --user
 
 ```
+### Dependencies
+If you want to use the (optional) SPectral hASHing functions (see https://splash.fiehnlab.ucdavis.edu/ for more details), 
+you may want to install pySPLASH with the following commands:
+```
+git clone git://github.com/berlinguyinca/spectra-hash.git
+cd spectra-hash/python
+python setup.py install
+
+```
 
 ## Usage
 
