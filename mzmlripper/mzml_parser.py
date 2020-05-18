@@ -85,7 +85,9 @@ class MzmlParser(object):
         output_dir {str} -- Location of where to save the JSON file
     """
 
-    def __init__(self, filename: str, output_dir: str, int_threshold=1000):
+    def __init__(
+        self, filename: str, output_dir: str, rt_units=None, int_threshold=1000
+        ):
         self.filename = filename
         self.output_dir = os.path.abspath(output_dir)
         self.in_spectrum = False
@@ -97,6 +99,7 @@ class MzmlParser(object):
         self.spec = Spectrum(int_threshold)
         self.spec_int_threshold = int_threshold
         self.curr_spec_bin_type = -1
+        self.rt_units = rt_units
 
 
     def _check_file(self):
@@ -231,7 +234,7 @@ class MzmlParser(object):
 
 
     def write_out_to_file(self):
-        """Writes out the MS2 and MS2 data to JSON format
+        """Writes out the MS1 and MS2 data to JSON format
 
         If any spectra are not processed, they are processed here
 
@@ -274,7 +277,7 @@ class MzmlParser(object):
                 self.in_spectrum = False
                 self.spec = Spectrum(self.spec_int_threshold)
             else:
-                self.extract_information(line)
+                self.extract_information(line=line)
 
 
     def start_spectrum(self, line: str):
@@ -319,7 +322,11 @@ class MzmlParser(object):
         if "ms level" in line:
             self.spec.ms_level = value_finder(self.re_expr["value"], line)
         elif "scan start time" in line:
-            self.spec.retention_time = value_finder(self.re_expr["value"], line)
+            rt_converter = 1
+            if self.rt_units == 'sec':
+                rt_converter = 60
+            self.spec.retention_time = str(float(value_finder(
+                self.re_expr["value"], line))/rt_converter)
         elif "MS:1000521" in line or "MS:1000523" in line:
             self.spec.d_type = value_finder(self.re_expr["name"], line)
         elif "MS:1000574" in line:

@@ -12,15 +12,18 @@ Single processing and bulk processing available.
 from .mzml_parser import MzmlParser
 
 
-def process_mzml_file(filename: str, out_dir: str, int_threshold=1000):
+def process_mzml_file(
+    filename: str, out_dir: str, rt_units=None, int_threshold=1000):
     """Constructs a parser for the mzML file and extracts information
 
     Arguments:
         filename {str} -- Name of the mzML file
         out_dir {str} -- Directory to store the output
+        rt_units {str} -- Units of mzML file retention times (min or sec)
 
     Keyword Arguments:
         int_threshold {int} -- Intensity threshold for peaks (default: {1000})
     """
 
-    return MzmlParser(filename, out_dir, int_threshold=int_threshold).parse_file()
+    return MzmlParser(
+        filename, out_dir, rt_units=rt_units, int_threshold=int_threshold).parse_file()
