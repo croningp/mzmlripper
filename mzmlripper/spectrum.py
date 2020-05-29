@@ -16,7 +16,8 @@ class Spectrum(object):
     """Class for representing a Spectrum object from mzML
 
     Arguments:
-        intensity_threshold {int} -- Threshold for cutting intensities below threshold
+        intensity_threshold {int} -- Threshold for cutting intensities below
+                                        threshold
     """
 
     def __init__(self, intensity_threshold):
@@ -31,7 +32,6 @@ class Spectrum(object):
         self.serialized = {}
         self.intensity_threshold = intensity_threshold
 
-
     def _set_data_type(self):
         """Sets the data type of the binary data within
         """
@@ -40,7 +40,6 @@ class Spectrum(object):
             self.d_type = "f"
         elif "64" in self.d_type:
             self.d_type = "d"
-
 
     def process(self):
         """Processes a Spectrum
@@ -52,7 +51,6 @@ class Spectrum(object):
         self._set_data_type()
         self.decode_and_decompress()
         self.serialized = self.serialize()
-
 
     def decode_and_decompress(self):
         """Decodes binary data from Base64 and decompresses if necessary
@@ -81,7 +79,6 @@ class Spectrum(object):
             )
         )
 
-
     def serialize(self) -> dict:
         """Converts the spectrum into a dictionary
 
@@ -100,7 +97,7 @@ class Spectrum(object):
                     out[f"{mz:.4f}"] = int(intensity)
                     mass_list.append(mz)
             elif self.ms_level > "1":
-                if intensity > (self.intensity_threshold/100) * 5:
+                if intensity > (self.intensity_threshold / 100) * 5:
                     out[f"{mz:.4f}"] = int(intensity)
                     mass_list.append(mz)
 
