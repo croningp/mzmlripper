@@ -21,21 +21,15 @@ Extracts the following information:
 
 ## Installation
 
-You can either clone the repo and run the installation script:
+Mzmlripper is available through Pip (Python Package Index):
 ```
-git clone http://datalore.chem.gla.ac.uk/Origins/mzmlripper.git
-
-python setup.py install --user
-
+pip install mzmlripper --user
 ```
 
-Or download directly from Pip:
-```
-pip install git+http://datalore.chem.gla.ac.uk/Origins/mzmlripper.git --user
+Source code will be made available in due course.
 
-```
 ### Dependencies
-If you want to use the (optional) SPectral hASHing functions (see https://splash.fiehnlab.ucdavis.edu/ for more details), 
+If you want to use the (optional) SPectraL hASHing functions (see https://splash.fiehnlab.ucdavis.edu/ for more details), 
 you may want to install pySPLASH with the following commands:
 ```
 git clone git://github.com/berlinguyinca/spectra-hash.git

@@ -9,7 +9,7 @@ Extracts:
     Mass List
     Retention Time
 
-.. moduleauthor:: Graham Keenan (Cronin Group 2019) <graham.keenan@glasgow.ac.uk>
+.. moduleauthor:: Graham Keenan <graham.keenan@glasgow.ac.uk>
 .. signature:: dd383a145d9a2425c23afc00c04dc054951b13c76b6138c6373597b9bf55c007
 
 """
@@ -87,7 +87,7 @@ class MzmlParser(object):
 
     def __init__(
         self, filename: str, output_dir: str, rt_units=None, int_threshold=1000
-        ):
+    ):
         self.filename = filename
         self.output_dir = os.path.abspath(output_dir)
         self.in_spectrum = False
@@ -101,7 +101,6 @@ class MzmlParser(object):
         self.curr_spec_bin_type = -1
         self.rt_units = rt_units
 
-
     def _check_file(self):
         """Checks if a file is valid for the parser
         Checks if the file is actually a file and if it is an mzML file
@@ -110,9 +109,11 @@ class MzmlParser(object):
             InvalidInputFile: File is invalid
         """
 
-        if not os.path.isfile(self.filename) or not self.filename.endswith(".mzML"):
+        if (
+            not os.path.isfile(self.filename)
+            or not self.filename.endswith(".mzML")
+        ):
             raise InvalidInputFile(f"File {self.filename} is not valid!")
-
 
     def parse_file(self):
         """Reads the file line by line and obtains all information
@@ -140,7 +141,6 @@ class MzmlParser(object):
 
         return output
 
-
     def bulk_process(self, ms1: list, ms2: list, ms3: list, ms4: list):
         """Creates threads for processing MS1 and MS2 data simultaneously
 
@@ -166,7 +166,6 @@ class MzmlParser(object):
         t3.join()
         t4.join()
 
-
     def process_spectra(self, spectra: list):
         """Processes spectra from a list and serialises the data
 
@@ -184,7 +183,6 @@ class MzmlParser(object):
                 self.ms3.append(spec)
             elif spec.ms_level == "4":
                 self.ms4.append(spec)
-
 
     def build_output(self) -> dict:
         """Builds the MS data output from the MS1 and MS2 data
@@ -232,7 +230,6 @@ class MzmlParser(object):
 
         return output
 
-
     def write_out_to_file(self):
         """Writes out the MS1 and MS2 data to JSON format
 
@@ -248,11 +245,11 @@ class MzmlParser(object):
         name = self.filename.split(os.sep)[-1]
 
         name = "ripper_" + name
-        out_path = os.path.join(self.output_dir, name.replace(".mzML", ".json"))
+        out_path = os.path.join(
+            self.output_dir, name.replace(".mzML", ".json"))
         write_json(output, out_path)
 
         return output
-
 
     def process_line(self, line: str):
         """Processes a line from mzML
@@ -260,10 +257,11 @@ class MzmlParser(object):
         Checks if we are in a spectrum or not
         If we're not in a spectrum, check for spectrum tag and pull information
 
-        Continuously check if we've reached the end tag of the spectrum and add the
-        spectrum to a list
+        Continuously check if we've reached the end tag of the spectrum and
+        add the spectrum to a list
 
-        If we're in a spectrum and not reached the end tag, check and pull relevant information
+        If we're in a spectrum and not reached the end tag,
+        check and pull relevant information
 
         Arguments:
             line {str} -- Line form mzML
@@ -278,7 +276,6 @@ class MzmlParser(object):
                 self.spec = Spectrum(self.spec_int_threshold)
             else:
                 self.extract_information(line=line)
-
 
     def start_spectrum(self, line: str):
         """Initiates the spectrum data gathering process
@@ -316,30 +313,48 @@ class MzmlParser(object):
             line {str} -- Line from mzML
 
         Raises:
-            Exception -- unable to determine what kind of binary data we're looking at
+            Exception -- Unable to determine what kind of binary data
+                            we're looking at
         """
 
+        # MS Level
         if "ms level" in line:
             self.spec.ms_level = value_finder(self.re_expr["value"], line)
+
+        # Retention time
         elif "scan start time" in line:
             rt_converter = 1
             if self.rt_units == 'sec':
                 rt_converter = 60
             self.spec.retention_time = str(float(value_finder(
-                self.re_expr["value"], line))/rt_converter)
+                self.re_expr["value"], line)) / rt_converter)
+
+        # Data type (32 or 64 bit)
         elif "MS:1000521" in line or "MS:1000523" in line:
             self.spec.d_type = value_finder(self.re_expr["name"], line)
+
+        # Compression type
         elif "MS:1000574" in line:
             self.spec.compression = value_finder(self.re_expr["name"], line)
+
+        # Parent mass
         elif "selected ion m/z" in line:
             self.spec.parent = value_finder(self.re_expr["value"], line)
+
+        # Suggested parent mass
         elif "MS:1000512" in line:
             suggested_parent = value_finder(self.re_expr["value"], line)
             self.update_parent(suggested_parent)
+
+        # MZ data
         elif "m/z array" in line:
             self.curr_spec_bin_type = 0
+
+        # Intensity data
         elif "intensity array" in line:
             self.curr_spec_bin_type = 1
+
+        # Binary blob
         elif "<binary>" in line:
             binary_text = value_finder(self.re_expr["binary"], line)
 
@@ -349,9 +364,10 @@ class MzmlParser(object):
                 self.spec.intensity = binary_text
             else:
                 raise Exception("Error setting binary type")
+
+        # Noting
         else:
             return
-
 
     def update_parent(self, filter_string: str):
         """Updates the parent for MS3 and above
