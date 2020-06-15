@@ -5,13 +5,13 @@ with open('README.md') as fd:
 
 setup(
     name="mzmlripper",
-    version="1.0.0",
+    version="1.0.1",
     author="Graham Keenan",
     author_email="graham.keenan@glasgow.ac.uk",
     description="Extractor for MS1 and MS2 data from mzML file format",
     long_description=readme,
     long_description_content_type='text/markdown',
-    url="http://gitlab.com/croningroup/origins/mzmlripper",
+    url="https://github.com/croningp/mzmlripper",
     packages=find_packages(),
     classifiers=[
         'Programming Language :: Python :: 3',
