@@ -3,9 +3,11 @@ Reads file line by line and extracts out all relevant information
 Information being MS1 and MS2 spectra data
 
 Extracts:
+    Scan: 
     M/z List
     Intensity List
     Parent mass
+    Parent Scan 
     Mass List
     Retention Time
 
@@ -34,7 +36,8 @@ def create_regex_mapper() -> dict:
         "array_length": r'defaultArrayLength="(.+?)"',
         "value": r'value="(.+?)"',
         "name": r'name="(.+?)"',
-        "binary": r'<binary>(.*?)</binary>'
+        "binary": r'<binary>(.*?)</binary>',
+        "scan":r'scan=([0-9]+)'
     }
 
 
@@ -320,7 +323,11 @@ class MzmlParser(object):
         # MS Level
         if "ms level" in line:
             self.spec.ms_level = value_finder(self.re_expr["value"], line)
-
+            
+        # Scan Number 
+        elif "spectrum title" in line:
+            self.spec.scan = value_finder(self.re_expr["scan"], line)
+            
         # Retention time
         elif "scan start time" in line:
             rt_converter = 1
@@ -339,8 +346,12 @@ class MzmlParser(object):
 
         # Parent mass
         elif "selected ion m/z" in line:
-            self.spec.parent = value_finder(self.re_expr["value"], line)
+            self.spec.parent_mass = value_finder(self.re_expr["value"], line)
 
+        # Parent Scan
+        elif "precursor spectrumRef" in line:
+            self.spec.parent_scan = value_finder(self.re_expr["scan"], line)
+            
         # Suggested parent mass
         elif "MS:1000512" in line:
             suggested_parent = value_finder(self.re_expr["value"], line)
@@ -381,6 +392,6 @@ class MzmlParser(object):
 
         parents = filter_string.split("@")
         if self.spec.ms_level == "3":
-            self.spec.parent = parents[1].split(" ")[-1]
+            self.spec.parent_mass = parents[1].split(" ")[-1]
         elif self.spec.ms_level == "4":
-            self.spec.parent = parents[2].split(" ")[-1]
+            self.spec.parent_mass = parents[2].split(" ")[-1]
