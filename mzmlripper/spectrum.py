@@ -104,7 +104,7 @@ class Spectrum(object):
                     mass_list.append(mz)
 
         out["retention_time"] = self.retention_time
-        out["mass_list"] = [float(f"{mass:.4f}") for mass in mass_list]
+       
         out["scan"] = self.scan
 
         if self.parent_mass:
@@ -112,5 +112,6 @@ class Spectrum(object):
         
         if self.parent_scan:
             out["parent_scan"] = self.parent_scan
-
+        out["mass_list"] = [float(f"{mass:.4f}") for mass in mass_list]
+        
         return out
