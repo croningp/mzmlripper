@@ -21,9 +21,11 @@ class Spectrum(object):
     """
 
     def __init__(self, intensity_threshold):
+        self.scan = ""
         self.array_length = ""
         self.ms_level = ""
-        self.parent = ""
+        self.parent_mass = ""
+        self.parent_scan = ""
         self.retention_time = ""
         self.d_type = ""
         self.compression = ""
@@ -102,9 +104,14 @@ class Spectrum(object):
                     mass_list.append(mz)
 
         out["retention_time"] = self.retention_time
+       
+        out["scan"] = self.scan
+
+        if self.parent_mass:
+            out["parent"] = f"{float(self.parent_mass):.4f}"
+        
+        if self.parent_scan:
+            out["parent_scan"] = self.parent_scan
         out["mass_list"] = [float(f"{mass:.4f}") for mass in mass_list]
-
-        if self.parent:
-            out["parent"] = f"{float(self.parent):.4f}"
-
+        
         return out
