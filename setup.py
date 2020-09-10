@@ -5,7 +5,7 @@ with open('README.md') as fd:
 
 setup(
     name="mzmlripper",
-    version="1.1.0",
+    version="1.1.1",
     author="Graham Keenan",
     author_email="graham.keenan@glasgow.ac.uk",
     description="Extractor for MS1 and MS2 data from mzML file format",
