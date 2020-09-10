@@ -59,13 +59,12 @@ class Spectrum(object):
 
         Converts the binary data to a list of floats
         """
-
         self.mz = base64.b64decode(self.mz)
         self.intensity = base64.b64decode(self.intensity)
 
         if "zlib" in self.compression:
-            self.mz = zlib.decompress(self.mz)
-            self.intensity = zlib.decompress(self.intensity)
+            self.mz = self.decompress(self.mz)
+            self.intensity = self.decompress(self.intensity)
 
         self.mz = list(
             struct.unpack(
@@ -80,6 +79,19 @@ class Spectrum(object):
                 self.intensity
             )
         )
+
+    def decompress(self, stream):
+        """
+        Decompresses a data stream using a zlib decompression object.
+        Args:
+            stream (bytes): data stream.
+
+        Returns:
+            bytes: decompressed data stream.
+        """
+        zobj = zlib.decompressobj()
+        stream = zobj.decompress(stream)
+        return stream + zobj.flush()
 
     def serialize(self) -> dict:
         """Converts the spectrum into a dictionary
