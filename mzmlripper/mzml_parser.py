@@ -214,22 +214,26 @@ class MzmlParser(object):
         for pos, spec in enumerate(self.ms1):
             if not spec.serialized:
                 spec.process()
-            ms1_out[f"spectrum_{pos+1}"] = spec.serialized
+            if spec.serialized["mass_list"]:
+                ms1_out[f"spectrum_{pos+1}"] = spec.serialized
 
         for pos, spec in enumerate(self.ms2):
             if not spec.serialized:
                 spec.process()
-            ms2_out[f"spectrum_{pos+1}"] = spec.serialized
+            if spec.serialized["mass_list"]:
+                ms2_out[f"spectrum_{pos+1}"] = spec.serialized
 
         for pos, spec in enumerate(self.ms3):
             if not spec.serialized:
                 spec.process()
-            ms3_out[f"spectrum_{pos+1}"] = spec.serialized
+            if spec.serialized["mass_list"]:
+                ms3_out[f"spectrum_{pos+1}"] = spec.serialized
 
         for pos, spec in enumerate(self.ms4):
             if not spec.serialized:
                 spec.process()
-            ms4_out[f"spectrum_{pos+1}"] = spec.serialized
+            if spec.serialized["mass_list"]:
+                ms4_out[f"spectrum_{pos+1}"] = spec.serialized
 
         return output
 
