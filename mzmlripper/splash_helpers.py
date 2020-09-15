@@ -6,9 +6,11 @@
 
 """
 
+from .logger import make_logger, colour_item
 from typing import Dict, Optional, List, Tuple
 
 SLAPSH_API_URL = "https://splash.fiehnlab.ucdavis.edu/splash/it"
+LOGGER = make_logger("PySPLASH")
 
 def _initSPLASHpackage():
     """ This function checks for the installation of the pySPLASH package.
@@ -25,12 +27,16 @@ def _initSPLASHpackage():
         from splash import Spectrum, SpectrumType, Splash
     except ImportError:
         # If you can't import give a warning.
-        print("pySPLASH not installed in local env!!! You've got two options:")
-        print(
+        LOGGER.warning("pySPLASH not installed in local env!!!\
+ You've got two options:")
+
+        LOGGER.warning(
             "1) Proceed using the web API (this is really slow if you've got a\
  large number of spectra to process)")
-        print("2) Exit and install pySPLASH by following the instructions here\
- 'https://github.com/berlinguyinca/spectra-hash/tree/master/python' ")
+
+        LOGGER.warning("2) Exit and install pySPLASH by following the\
+ instructions here\
+ 'https://github.com/berlinguyinca/spectra-hash/tree/master/python'")
 
         response = None
         response = input(

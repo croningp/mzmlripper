@@ -25,6 +25,7 @@ from typing import List, Optional, Dict
 
 # Ripper imports
 from .spectrum import Spectrum
+from .logger import make_logger, colour_item
 
 
 def create_regex_mapper() -> dict:
@@ -100,6 +101,7 @@ class MzmlParser:
         rt_units: Optional[int] = None,
         int_threshold: Optional[int] = 1000
     ):
+        self.logger = make_logger("MzMLRipper")
         self.filename = filename
         self.output_dir = os.path.abspath(output_dir)
         self.in_spectrum = False
@@ -139,12 +141,17 @@ class MzmlParser:
 
         # Open the file and process each line individually
         with open(self.filename) as f_d:
-            print(f"Parsing file: {self.filename}...")
+            self.logger.info(
+                f"Parsing file: {colour_item(self.filename, 'yellow')}..."
+            )
             for line in f_d.readlines():
                 self.process_line(line)
 
-        print(f"Parsing complete!\nTotal Spectra: {len(self.spectra)}")
-        print("Processing spectra...")
+        self.logger.info(
+            f"Parsing complete!\nTotal Spectra:\
+ {colour_item(str(len(self.spectra)), 'green')}"
+        )
+        self.logger.info("Processing spectra...")
 
         # Get all MS level spectra from the collection
         ms_levels = [
@@ -155,7 +162,7 @@ class MzmlParser:
         # Process and write out to file
         self.bulk_process(*ms_levels)
         output = self.write_out_to_file()
-        print("Complete!")
+        self.logger.info(f"{colour_item('Complete', 'green')}")
 
         return output
 
