@@ -7,17 +7,22 @@ Raw information is then decoded and serialised into a dictionary
 
 """
 
+# System imports
 import zlib
 import struct
 import base64
+from typing import Dict
 
+class UnsupportedCompressionMethod(Exception):
+    """Compression type is not yet supported
+    """
 
 class Spectrum(object):
     """Class for representing a Spectrum object from mzML
 
     Arguments:
-        intensity_threshold {int} -- Threshold for cutting intensities below
-                                        threshold
+        intensity_threshold (int): Threshold for cutting intensities below
+        threshold
     """
 
     def __init__(self, intensity_threshold):
@@ -59,13 +64,21 @@ class Spectrum(object):
 
         Converts the binary data to a list of floats
         """
+
+        # Decode the MZ and intensity data
         self.mz = base64.b64decode(self.mz)
         self.intensity = base64.b64decode(self.intensity)
 
+        # Using ZLib compression
         if "zlib" in self.compression:
             self.mz = self.decompress(self.mz)
             self.intensity = self.decompress(self.intensity)
+        else:
+            raise UnsupportedCompressionMethod(
+                f"Compression method {self.compression} is not supported."
+            )
 
+        # Build the MZ array
         self.mz = list(
             struct.unpack(
                 f"<{self.array_length}{self.d_type}",
@@ -73,6 +86,7 @@ class Spectrum(object):
             )
         )
 
+        # Build the Intensity array
         self.intensity = list(
             struct.unpack(
                 f"<{self.array_length}{self.d_type}",
@@ -80,7 +94,7 @@ class Spectrum(object):
             )
         )
 
-    def decompress(self, stream):
+    def decompress(self, stream: bytes):
         """
         Decompresses a data stream using a zlib decompression object.
         Args:
@@ -89,41 +103,52 @@ class Spectrum(object):
         Returns:
             bytes: decompressed data stream.
         """
+
+        # Decompress the ZLib stream
         zobj = zlib.decompressobj()
         stream = zobj.decompress(stream)
         return stream + zobj.flush()
 
-    def serialize(self) -> dict:
+    def serialize(self) -> Dict:
         """Converts the spectrum into a dictionary
 
         Only takes relevant information
 
         Returns:
-            dict -- Spectrum data
+            Dict: Spectrum data
         """
 
         out = {}
         mass_list = []
 
+        # Iterate through the MZ and intensity
         for mz, intensity in zip(self.mz, self.intensity):
+            # Check the intensity threshold is met and add to output
             if self.ms_level == "1":
                 if intensity > self.intensity_threshold:
                     out[f"{mz:.4f}"] = int(intensity)
                     mass_list.append(mz)
+
+            # Check the intensity threshold is met and add to output for MS 2
             elif self.ms_level > "1":
                 if intensity > (self.intensity_threshold / 100) * 5:
                     out[f"{mz:.4f}"] = int(intensity)
                     mass_list.append(mz)
 
+        # Populate remaining data
         out["retention_time"] = self.retention_time
-       
+
         out["scan"] = self.scan
 
+        # Set the parent mass if applicable
         if self.parent_mass:
             out["parent"] = f"{float(self.parent_mass):.4f}"
-        
+
+        # Set parent scan if applicable
         if self.parent_scan:
             out["parent_scan"] = self.parent_scan
+
+        # Create mass list
         out["mass_list"] = [float(f"{mass:.4f}") for mass in mass_list]
-        
+
         return out
