@@ -92,6 +92,9 @@ class MzmlParser:
         output_dir (str): Location of where to save the JSON file
         rt_units (int, optional): Retention time units. Defaults to `None`
         int_threshold (int, optional): Intensity Threshold. Defaults to 1000.
+        relative_intensity (bool, optional): Specifies whether final intensities
+            for individual ions in spectra are displayed as relative (%) or
+            absolute intensities. Defaults to False.
     """
 
     def __init__(
@@ -99,7 +102,8 @@ class MzmlParser:
         filename: str,
         output_dir: str,
         rt_units: Optional[int] = None,
-        int_threshold: Optional[int] = 1000
+        int_threshold: Optional[int] = 1000,
+        relative_intensity: Optional[bool] = False
     ):
         self.logger = make_logger("MzMLRipper")
         self.filename = filename
@@ -108,7 +112,10 @@ class MzmlParser:
         self.re_expr = create_regex_mapper()
         self.spectra = []
         self.ms1, self.ms2, self.ms3, self.ms4 = [], [], [], []
-        self.spec = Spectrum(int_threshold)
+        self.spec = Spectrum(
+            intensity_threshold=int_threshold,
+            relative=relative_intensity
+        )
         self.spec_int_threshold = int_threshold
         self.curr_spec_bin_type = -1
         self.rt_units = rt_units

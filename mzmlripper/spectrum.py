@@ -13,9 +13,15 @@ import struct
 import base64
 from typing import Dict
 
+#  list of spectrum keys that do not correspond to individual ions with specific
+#  m/z and intensity values
+NON_MASS_KEYS = ["mass_list", "retention_time", "parent", "scan"]
+
+
 class UnsupportedCompressionMethod(Exception):
     """Compression type is not yet supported
     """
+
 
 class Spectrum(object):
     """Class for representing a Spectrum object from mzML
@@ -23,9 +29,11 @@ class Spectrum(object):
     Arguments:
         intensity_threshold (int): Threshold for cutting intensities below
         threshold
+        relative (bool, optional): Specifies whether intensities of individual
+            ions in spectra are displayed in relative (%) or absolute units.
     """
 
-    def __init__(self, intensity_threshold):
+    def __init__(self, intensity_threshold, relative=False):
         self.scan = ""
         self.array_length = ""
         self.ms_level = ""
@@ -38,6 +46,7 @@ class Spectrum(object):
         self.intensity = ""
         self.serialized = {}
         self.intensity_threshold = intensity_threshold
+        self.relative = relative
 
     def _set_data_type(self):
         """Sets the data type of the binary data within
@@ -151,4 +160,39 @@ class Spectrum(object):
         # Create mass list
         out["mass_list"] = [float(f"{mass:.4f}") for mass in mass_list]
 
+        #  if relative intensities are to be returned, convert spectrum dict
+        if self.relative:
+            out = self.convert_to_relative(out)
+
         return out
+
+    def convert_to_relative(self, spectrum_dict: dict) -> Dict:
+        """Converts a spectrum dict of absolute intensities to relative
+        intensities.
+
+        spectrum_dict (dict): standard spectrum dict with absolute intensities.
+        Returns:
+            Dict: Spectrum data
+        """
+        #  get list of ions ([[m/z, I], ...]) sorted by intensity
+        all_ions = sorted([
+            [mass, intensity]
+            for mass, intensity in spectrum_dict.items()
+            if mass not in NON_MASS_KEYS], key=lambda x: x[1])
+
+        #  get the base peak - most intense ion
+        base_peak = all_ions[-1]
+
+        #  make sure all NON_MASS_KEYS remain unchanged in spectrum_dict
+        spectrum_dict = {
+            key: value for key, value in spectrum_dict.items()
+            if key in NON_MASS_KEYS
+        }
+
+        #  iterate through ions, readding to spectrum_dict with relative
+        #  intensities
+        for ion in all_ions:
+            spectrum_dict[ion[0]] = round((ion[1] / base_peak[1]) * 100, 4)
+        spectrum_dict["base_peak"] = base_peak
+
+        return spectrum_dict
