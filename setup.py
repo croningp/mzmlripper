@@ -5,9 +5,9 @@ with open('README.md') as fd:
 
 setup(
     name="mzmlripper",
-    version="1.1.2",
-    author="Graham Keenan",
-    author_email="graham.keenan@glasgow.ac.uk",
+    version="1.2.0",
+    author="Cronin Group",
+    author_email="croningp.pypi@gmail.com",
     description="Extractor for MS1-MS4 level spectra from mzML file format",
     long_description=readme,
     long_description_content_type='text/markdown',
