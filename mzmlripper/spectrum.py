@@ -15,7 +15,7 @@ from typing import Dict
 
 #  list of spectrum keys that do not correspond to individual ions with specific
 #  m/z and intensity values
-NON_MASS_KEYS = ["mass_list", "retention_time", "parent", "scan"]
+NON_MASS_KEYS = ["mass_list", "retention_time", "parent", "scan", "parent_scan"]
 
 
 class UnsupportedCompressionMethod(Exception):
@@ -176,7 +176,7 @@ class Spectrum(object):
         """
         #  get list of ions ([[m/z, I], ...]) sorted by intensity
         all_ions = sorted([
-            [mass, intensity]
+            [float(mass), float(intensity)]
             for mass, intensity in spectrum_dict.items()
             if mass not in NON_MASS_KEYS], key=lambda x: x[1])
 

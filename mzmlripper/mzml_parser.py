@@ -116,6 +116,7 @@ class MzmlParser:
             intensity_threshold=int_threshold,
             relative=relative_intensity
         )
+        self.relative = relative_intensity
         self.spec_int_threshold = int_threshold
         self.curr_spec_bin_type = -1
         self.rt_units = rt_units
@@ -308,7 +309,10 @@ class MzmlParser:
             if "</spectrum>" in line:
                 self.spectra.append(self.spec)
                 self.in_spectrum = False
-                self.spec = Spectrum(self.spec_int_threshold)
+                self.spec = Spectrum(
+                    intensity_threshold=self.spec_int_threshold,
+                    relative=self.relative
+                )
             else:
                 self.extract_information(line=line)
 
