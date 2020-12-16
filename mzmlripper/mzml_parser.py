@@ -275,11 +275,12 @@ class MzmlParser:
 
         name = self.filename.split(os.sep)[-1]
 
-        if not os.path.exists(self.output_dir):
-            os.mkdir(self.output_dir)
         name = "ripper_" + name
         out_path = os.path.join(
             self.output_dir, name.replace(".mzML", ".json"))
+
+        if not os.path.exists(os.path.dirname(out_path)):
+            os.makedirs(os.path.dirname(out_path))
         write_json(output, out_path)
 
         return output
