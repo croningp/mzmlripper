@@ -2,6 +2,10 @@
 
 * Added ability to display spectra with relative intensities
 
+## Release 1.2.1
+
+* Fixed bug when writing out to file if the original `mzml` file is within a subdirectory
+
 # Release 1.1.0
 
 * Added in Spectral Hash (SPLASH) of spectra from the SPLASH API
