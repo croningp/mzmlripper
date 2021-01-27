@@ -1,9 +1,11 @@
+image: "python:3.8"
+
 stages:
-    - "lint"
+    - lint
+    - testing
 
 lint:
-    stage: "lint"
-    image: "python:3.8"
+    stage: lint
 
     variables:
         FLAKE8_EXCLUDE: __init__.py,venv
@@ -15,4 +17,14 @@ lint:
         - pip install flake8
         - pip install flake8-print
         - flake8 . --max-line-length=$FLAKE8_MAX_LINE_LENGTH --ignore=$FLAKE8_IGNORE --per-file-ignores=$FLAKE8_PER_FILE_IGNORE --exclude=$FLAKE8_EXCLUDE
-        
+
+testing:
+    stage: testing
+
+    before_script:
+        - pip install pytest
+        - pip install coverage
+
+    script:
+        - coverage run -m pytest test -m unit -rf -x -vv
+        - coverage report -m --fail-under=34

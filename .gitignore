@@ -1,8 +1,8 @@
 *.mzML
 __pycache__/
 .vscode/
-*.json
 mzmlripper.egg-info/
 build/
 dist/
-tests/
+mzmlripper/*.json
+*.coverage
