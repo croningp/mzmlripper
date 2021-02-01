@@ -1,3 +1,10 @@
+# Release 1.3.0
+
+* Added ability to generate different classes of Chromatograms
+  * Extracted Ion Chromatograms (EICs)
+  * Base Peak Chromatograms (BPCs)
+  * Total Ion Currents (TICs)
+
 # Release 1.2.0
 
 * Added ability to display spectra with relative intensities
