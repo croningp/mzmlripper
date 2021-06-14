@@ -27,6 +27,8 @@ from typing import List, Optional, Dict
 from .spectrum import Spectrum
 from .logger import make_logger, colour_item
 
+# List of banned phrases to ignore as they can screw with the parsing
+BANNED_PHRASES = ["<userParam"]
 
 def create_regex_mapper() -> dict:
     """Creates a mapping of tags to RegEx strings
@@ -76,6 +78,26 @@ def write_json(data: dict, filename: str):
     with open(filename, "w") as f_d:
         json.dump(data, f_d, indent=4)
 
+def banned_phrases(line: str) -> bool:
+    """Small check to determine if any banned phrase is in a given line.
+    Banned phrases are phrases that can interfere with the parsing and indicate
+    that the parser should ignore said line.
+
+    Args:
+        line (str): Line to check
+
+    Returns:
+        bool: Banned phrase exists
+    """
+
+    # Iterate through all banned phrases
+    for phrase in BANNED_PHRASES:
+        # Phrase is banned
+        if phrase in line:
+            return True
+
+    # No banned phrases found
+    return False
 
 class InvalidInputFile(Exception):
     """Exception for invalid file formats
@@ -315,7 +337,10 @@ class MzmlParser:
                     relative=self.relative
                 )
             else:
-                self.extract_information(line=line)
+                if banned_phrases(line):
+                    return
+
+                self.extract_information(line)
 
     def start_spectrum(self, line: str):
         """Initiates the spectrum data gathering process
@@ -362,15 +387,15 @@ class MzmlParser:
         """
 
         # MS Level
-        if "ms level" in line:
+        if "MS:1000511" in line:
             self.spec.ms_level = value_finder(self.re_expr["value"], line)
 
         # Scan Number
-        elif "spectrum title" in line:
+        elif "MS:1000796" in line:
             self.spec.scan = value_finder(self.re_expr["scan"], line)
 
         # Retention time
-        elif "scan start time" in line:
+        elif "MS:1000016" in line:
             rt_converter = 1
             if self.rt_units == 'sec':
                 rt_converter = 60
@@ -386,11 +411,11 @@ class MzmlParser:
             self.spec.compression = value_finder(self.re_expr["name"], line)
 
         # Parent mass
-        elif "selected ion m/z" in line:
+        elif "MS:1000744" in line:
             self.spec.parent_mass = value_finder(self.re_expr["value"], line)
 
         # Parent Scan
-        elif "precursor spectrumRef" in line:
+        elif "<precursor spectrumRef" in line:
             self.spec.parent_scan = value_finder(self.re_expr["scan"], line)
 
         # Suggested parent mass
@@ -399,11 +424,11 @@ class MzmlParser:
             self.update_parent(suggested_parent)
 
         # MZ data
-        elif "m/z array" in line:
+        elif "MS:1000514" in line:
             self.curr_spec_bin_type = 0
 
         # Intensity data
-        elif "intensity array" in line:
+        elif "MS:1000515" in line:
             self.curr_spec_bin_type = 1
 
         # Binary blob
