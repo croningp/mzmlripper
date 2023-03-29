@@ -37,6 +37,8 @@ class Spectrum(object):
         self.scan = ""
         self.array_length = ""
         self.ms_level = ""
+        self.precursors = []
+        self.precursors_scans = []
         self.parent_mass = ""
         self.parent_scan = ""
         self.retention_time = ""
@@ -151,11 +153,22 @@ class Spectrum(object):
 
         # Set the parent mass if applicable
         if self.parent_mass:
-            out["parent"] = f"{float(self.parent_mass):.4f}"
-
+            # AMK changed this:
+            #out["parent"] = f"{float(self.parent_mass):.4f}"
+            out["parent"] = f"{float(self.precursors[0]):.4f}"
+        
+        # AMK: Set the precursor list
+        if self.precursors:
+            out["precursors"] = self.precursors
         # Set parent scan if applicable
         if self.parent_scan:
-            out["parent_scan"] = self.parent_scan
+            # AMK changed this:
+            #out["parent_scan"] = self.parent_scan
+            out["parent_scan"] = self.precursors_scans
+
+        # AMK: Set the precursor list
+        if self.precursors_scans:
+            out["precursors_scans"] = self.precursors_scans
 
         # Create mass list
         out["mass_list"] = [float(f"{mass:.4f}") for mass in mass_list]

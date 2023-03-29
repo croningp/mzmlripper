@@ -133,7 +133,7 @@ class MzmlParser:
         self.in_spectrum = False
         self.re_expr = create_regex_mapper()
         self.spectra = []
-        self.ms1, self.ms2, self.ms3, self.ms4 = [], [], [], []
+        self.ms = {}
         self.spec = Spectrum(
             intensity_threshold=int_threshold,
             relative=relative_intensity
@@ -186,7 +186,7 @@ class MzmlParser:
         # Get all MS level spectra from the collection
         ms_levels = [
             [spec for spec in self.spectra if spec.ms_level == str(level)]
-            for level in range(1, 5)
+            for level in range(1, max(map(int,list(self.ms.keys())))+1)
         ]
 
         # Process and write out to file
@@ -220,14 +220,7 @@ class MzmlParser:
 
         for spec in spectra:
             spec.process()
-            if spec.ms_level == "1":
-                self.ms1.append(spec)
-            elif spec.ms_level == "2":
-                self.ms2.append(spec)
-            elif spec.ms_level == "3":
-                self.ms3.append(spec)
-            elif spec.ms_level == "4":
-                self.ms4.append(spec)
+            self.ms[spec.ms_level].append(spec)
 
     def build_output(self) -> Dict:
         """Builds the MS data output from the MS1 and MS2 data
@@ -237,49 +230,19 @@ class MzmlParser:
         """
 
         # Create the output
-        output = {
-            "ms1": {},
-            "ms2": {},
-            "ms3": {},
-            "ms4": {}
-        }
-
-        # Set vars to work with
-        ms1_out = output["ms1"]
-        ms2_out = output["ms2"]
-        ms3_out = output["ms3"]
-        ms4_out = output["ms4"]
+        output = {"ms" + str(x): {} for x in self.ms.keys()}
 
         # Sort the MS spectra by retention time
-        self.ms1 = sorted(self.ms1, key=lambda x: x.retention_time)
-        self.ms2 = sorted(self.ms2, key=lambda x: x.retention_time)
-        self.ms3 = sorted(self.ms3, key=lambda x: x.retention_time)
-        self.ms4 = sorted(self.ms4, key=lambda x: x.retention_time)
+        for ms_level in self.ms:
+            self.ms[ms_level] = sorted(self.ms[ms_level], key=lambda x: x.retention_time)
 
         # Populate the output
-        for pos, spec in enumerate(self.ms1):
-            if not spec.serialized:
-                spec.process()
-            if spec.serialized["mass_list"]:
-                ms1_out[f"spectrum_{pos+1}"] = spec.serialized
-
-        for pos, spec in enumerate(self.ms2):
-            if not spec.serialized:
-                spec.process()
-            if spec.serialized["mass_list"]:
-                ms2_out[f"spectrum_{pos+1}"] = spec.serialized
-
-        for pos, spec in enumerate(self.ms3):
-            if not spec.serialized:
-                spec.process()
-            if spec.serialized["mass_list"]:
-                ms3_out[f"spectrum_{pos+1}"] = spec.serialized
-
-        for pos, spec in enumerate(self.ms4):
-            if not spec.serialized:
-                spec.process()
-            if spec.serialized["mass_list"]:
-                ms4_out[f"spectrum_{pos+1}"] = spec.serialized
+        for ms_level in sorted(list(self.ms.keys())):
+            for pos, spec in enumerate(self.ms[ms_level]):
+                if not spec.serialized:
+                    spec.process()
+                if spec.serialized["mass_list"]:
+                    output["ms"+ms_level][f"spectrum_{pos+1}"] = spec.serialized
 
         return output
 
@@ -389,6 +352,8 @@ class MzmlParser:
         # MS Level
         if "MS:1000511" in line:
             self.spec.ms_level = value_finder(self.re_expr["value"], line)
+            if self.spec.ms_level not in self.ms:
+                self.ms[self.spec.ms_level] = []
 
         # Scan Number
         elif "MS:1000796" in line:
@@ -413,10 +378,12 @@ class MzmlParser:
         # Parent mass
         elif "MS:1000744" in line:
             self.spec.parent_mass = value_finder(self.re_expr["value"], line)
+            self.spec.precursors.append(value_finder(self.re_expr["value"], line))
 
         # Parent Scan
         elif "<precursor spectrumRef" in line:
             self.spec.parent_scan = value_finder(self.re_expr["scan"], line)
+            self.spec.precursors_scans.append(value_finder(self.re_expr["scan"], line))
 
         # Suggested parent mass
         elif "MS:1000512" in line:
@@ -464,7 +431,4 @@ class MzmlParser:
 
         # Sets the parent for MS levels 3 and above
         parents = filter_string.split("@")
-        if self.spec.ms_level == "3":
-            self.spec.parent_mass = parents[1].split(" ")[-1]
-        elif self.spec.ms_level == "4":
-            self.spec.parent_mass = parents[2].split(" ")[-1]
+        self.spec.parent_mass = parents[int(self.spec.ms_level)-2].split(" ")[-1]
