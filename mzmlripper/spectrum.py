@@ -46,6 +46,7 @@ class Spectrum(object):
         self.compression = ""
         self.mz = ""
         self.intensity = ""
+        self.hcd = ""
         self.serialized = {}
         self.intensity_threshold = intensity_threshold
         self.relative = relative
@@ -160,15 +161,20 @@ class Spectrum(object):
         # AMK: Set the precursor list
         if self.precursors:
             out["precursors"] = self.precursors
+
         # Set parent scan if applicable
         if self.parent_scan:
             # AMK changed this:
             #out["parent_scan"] = self.parent_scan
-            out["parent_scan"] = self.precursors_scans
+            out["parent_scan"] = self.precursors_scans[0]
 
         # AMK: Set the precursor list
         if self.precursors_scans:
             out["precursors_scans"] = self.precursors_scans
+
+        # AMK: Set fragmentation energy
+        if self.hcd:
+            out["HCD"] = self.hcd
 
         # Create mass list
         out["mass_list"] = [float(f"{mass:.4f}") for mass in mass_list]

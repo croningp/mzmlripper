@@ -30,6 +30,7 @@ from .logger import make_logger, colour_item
 # List of banned phrases to ignore as they can screw with the parsing
 BANNED_PHRASES = ["<userParam"]
 
+
 def create_regex_mapper() -> dict:
     """Creates a mapping of tags to RegEx strings
 
@@ -42,8 +43,8 @@ def create_regex_mapper() -> dict:
         "array_length": r'defaultArrayLength="(.+?)"',
         "value": r'value="(.+?)"',
         "name": r'name="(.+?)"',
-        "binary": r'<binary>(.*?)</binary>',
-        "scan": r'scan=([0-9]+)'
+        "binary": r"<binary>(.*?)</binary>",
+        "scan": r"scan=([0-9]+)",
     }
 
 
@@ -78,6 +79,7 @@ def write_json(data: dict, filename: str):
     with open(filename, "w") as f_d:
         json.dump(data, f_d, indent=4)
 
+
 def banned_phrases(line: str) -> bool:
     """Small check to determine if any banned phrase is in a given line.
     Banned phrases are phrases that can interfere with the parsing and indicate
@@ -99,9 +101,9 @@ def banned_phrases(line: str) -> bool:
     # No banned phrases found
     return False
 
+
 class InvalidInputFile(Exception):
-    """Exception for invalid file formats
-    """
+    """Exception for invalid file formats"""
 
 
 class MzmlParser:
@@ -114,9 +116,9 @@ class MzmlParser:
         output_dir (str): Location of where to save the JSON file
         rt_units (int, optional): Retention time units. Defaults to `None`
         int_threshold (int, optional): Intensity Threshold. Defaults to 1000.
-        relative_intensity (bool, optional): Specifies whether final intensities
-            for individual ions in spectra are displayed as relative (%) or
-            absolute intensities. Defaults to False.
+        relative_intensity (bool, optional): Specifies whether final
+            intensities for individual ions in spectra are displayed as
+            relative (%) or absolute intensities. Defaults to False.
     """
 
     def __init__(
@@ -125,7 +127,7 @@ class MzmlParser:
         output_dir: str,
         rt_units: Optional[int] = None,
         int_threshold: Optional[int] = 1000,
-        relative_intensity: Optional[bool] = False
+        relative_intensity: Optional[bool] = False,
     ):
         self.logger = make_logger("MzMLRipper")
         self.filename = filename
@@ -134,9 +136,9 @@ class MzmlParser:
         self.re_expr = create_regex_mapper()
         self.spectra = []
         self.ms = {}
+
         self.spec = Spectrum(
-            intensity_threshold=int_threshold,
-            relative=relative_intensity
+            intensity_threshold=int_threshold, relative=relative_intensity
         )
         self.relative = relative_intensity
         self.spec_int_threshold = int_threshold
@@ -151,9 +153,8 @@ class MzmlParser:
             InvalidInputFile: File is invalid
         """
 
-        if (
-            not os.path.isfile(self.filename)
-            or not self.filename.endswith(".mzML")
+        if not os.path.isfile(self.filename) or not self.filename.endswith(
+            ".mzML"
         ):
             raise InvalidInputFile(f"File {self.filename} is not valid!")
 
@@ -186,7 +187,7 @@ class MzmlParser:
         # Get all MS level spectra from the collection
         ms_levels = [
             [spec for spec in self.spectra if spec.ms_level == str(level)]
-            for level in range(1, max(map(int,list(self.ms.keys())))+1)
+            for level in range(1, max(map(int, list(self.ms.keys()))) + 1)
         ]
 
         # Process and write out to file
@@ -204,8 +205,7 @@ class MzmlParser:
         """
 
         pool = [
-            Thread(target=self.process_spectra, args=(ms,))
-            for ms in ms_levels
+            Thread(target=self.process_spectra, args=(ms,)) for ms in ms_levels
         ]
 
         [thread.start() for thread in pool]
@@ -234,7 +234,9 @@ class MzmlParser:
 
         # Sort the MS spectra by retention time
         for ms_level in self.ms:
-            self.ms[ms_level] = sorted(self.ms[ms_level], key=lambda x: x.retention_time)
+            self.ms[ms_level] = sorted(
+                self.ms[ms_level], key=lambda x: x.retention_time
+            )
 
         # Populate the output
         for ms_level in sorted(list(self.ms.keys())):
@@ -242,7 +244,9 @@ class MzmlParser:
                 if not spec.serialized:
                     spec.process()
                 if spec.serialized["mass_list"]:
-                    output["ms"+ms_level][f"spectrum_{pos+1}"] = spec.serialized
+                    output["ms" + ms_level][
+                        f"spectrum_{pos+1}"
+                    ] = spec.serialized
 
         return output
 
@@ -262,7 +266,8 @@ class MzmlParser:
 
         name = "ripper_" + name
         out_path = os.path.join(
-            self.output_dir, name.replace(".mzML", ".json"))
+            self.output_dir, name.replace(".mzML", ".json")
+        )
 
         if not os.path.exists(os.path.dirname(out_path)):
             os.makedirs(os.path.dirname(out_path))
@@ -297,7 +302,7 @@ class MzmlParser:
                 self.in_spectrum = False
                 self.spec = Spectrum(
                     intensity_threshold=self.spec_int_threshold,
-                    relative=self.relative
+                    relative=self.relative,
                 )
             else:
                 if banned_phrases(line):
@@ -327,8 +332,7 @@ class MzmlParser:
 
         # Find the size of the data array
         self.spec.array_length = value_finder(
-            self.re_expr["array_length"],
-            line
+            self.re_expr["array_length"], line
         )
 
     def extract_information(self, line: str):
@@ -362,10 +366,19 @@ class MzmlParser:
         # Retention time
         elif "MS:1000016" in line:
             rt_converter = 1
-            if self.rt_units == 'sec':
+            if self.rt_units == "sec":
                 rt_converter = 60
-            self.spec.retention_time = str(float(value_finder(
-                self.re_expr["value"], line)) / rt_converter)
+            self.spec.retention_time = str(
+                float(value_finder(self.re_expr["value"], line)) / rt_converter
+            )
+
+        # Fragmentation energy
+        elif "MS:1000512" in line:
+            self.spec.hcd = (
+                value_finder(self.re_expr["value"], line)
+                .split("hcd")[-1]
+                .split(" ")[0]
+            )
 
         # Data type (32 or 64 bit)
         elif "MS:1000521" in line or "MS:1000523" in line:
@@ -378,12 +391,16 @@ class MzmlParser:
         # Parent mass
         elif "MS:1000744" in line:
             self.spec.parent_mass = value_finder(self.re_expr["value"], line)
-            self.spec.precursors.append(value_finder(self.re_expr["value"], line))
+            self.spec.precursors.append(
+                value_finder(self.re_expr["value"], line)
+            )
 
         # Parent Scan
         elif "<precursor spectrumRef" in line:
             self.spec.parent_scan = value_finder(self.re_expr["scan"], line)
-            self.spec.precursors_scans.append(value_finder(self.re_expr["scan"], line))
+            self.spec.precursors_scans.append(
+                value_finder(self.re_expr["scan"], line)
+            )
 
         # Suggested parent mass
         elif "MS:1000512" in line:
@@ -431,4 +448,10 @@ class MzmlParser:
 
         # Sets the parent for MS levels 3 and above
         parents = filter_string.split("@")
-        self.spec.parent_mass = parents[int(self.spec.ms_level)-2].split(" ")[-1]
+        self.spec.parent_mass = parents[int(self.spec.ms_level) - 2].split(
+            " "
+        )[-1]
+        # if self.spec.ms_level == "3":
+        #     self.spec.parent_mass = parents[1].split(" ")[-1]
+        # elif self.spec.ms_level == "4":
+        #     self.spec.parent_mass = parents[2].split(" ")[-1]

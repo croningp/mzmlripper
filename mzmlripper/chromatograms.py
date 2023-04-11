@@ -10,7 +10,7 @@ def generate_EIC(
     error_tolerance: float = 10,
     error_units: float = "ppm",
     min_rt: float = 0,
-    max_rt: float = None
+    max_rt: float = None,
 ) -> tuple:
     """
     Generate Extracted Ion Chromatograms (EIC) for target mass.
@@ -21,8 +21,8 @@ def generate_EIC(
         error_tolerance (float, optional): error threshold for matching target
             m/z to candidates. Can either be in absolute units (u) or relative
             (ppm) Defaults to 10 (ppm).
-        error_units (float, optional): units for error tolerance. Must be either
-            "ppm" for relative units or "u" for absolute mass units.
+        error_units (float, optional): units for error tolerance. Must be
+            either "ppm" for relative units or "u" for absolute mass units.
             Defaults to "ppm".
         min_rt (float, optional): specifies minimum retention time for EIC.
             Defaults to 0.
@@ -43,24 +43,27 @@ def generate_EIC(
 
     #  filter by retention time
     ms_data = [
-        spec for spec in ms_data.values()
+        spec
+        for spec in ms_data.values()
         if float(spec["retention_time"]) >= min_rt
     ]
 
     if max_rt:
         ms_data = [
-            spec for spec in ms_data.values()
+            spec
+            for spec in ms_data.values()
             if float(spec["retention_time"]) <= max_rt
         ]
 
     #  check and (if necessary) convert error_tolerance to absolute (Thomson)
     #  units
     if error_units == "ppm":
-        error_tolerance = (target_mass / 1E6 * error_tolerance)
+        error_tolerance = target_mass / 1e6 * error_tolerance
     elif error_units != "u":
         raise Exception(
             f"{error_units} not valid error units. Choose either 'u' or 'ppm'"
-            " for absolute and relative error, respectively.")
+            " for absolute and relative error, respectively."
+        )
 
     #  get final mass range for matching
     mass_range = (target_mass - error_tolerance, target_mass + error_tolerance)
@@ -69,7 +72,6 @@ def generate_EIC(
     for spec in ms_data:
         matches = match_mass(candidates=spec["mass_list"], range=mass_range)
         if matches:
-
             intensity = sum(
                 [float(spec[format(match, ".4f")]) for match in matches]
             )
@@ -77,9 +79,7 @@ def generate_EIC(
 
 
 def generate_chromatogram(
-    ms_data: dict,
-    chromatogram: str,
-    ms_level: int = 1
+    ms_data: dict, chromatogram: str, ms_level: int = 1
 ) -> list:
     """
     Generates a either a Base Peak Chromatogram (BPC) or Total Ion Chromatogram
@@ -87,9 +87,9 @@ def generate_chromatogram(
 
     Args:
         ms_data (dict): mzml ripper data in standard ripper format.
-        chromatogram (str): specifies type of chromatogram. Must be either "tic"
-            or "bpc" for Total Ion Chromatogram or Base Peak Chromatogram,
-            respectively.
+        chromatogram (str): specifies type of chromatogram. Must be either
+            "tic" or "bpc" for Total Ion Chromatogram or Base Peak
+            Chromatogram, respectively.
         ms_level (int, optional): specifies ms level for BPC. Defaults to 1.
 
     Raises:
@@ -111,9 +111,7 @@ def generate_chromatogram(
             find_max_peak(spectrum=spectrum) for spectrum in ms_data.values()
         ]
     elif chromatogram.lower() == "tic":
-        return [
-            sum_intensity_peaks(spectrum) for spectrum in ms_data.values()
-        ]
+        return [sum_intensity_peaks(spectrum) for spectrum in ms_data.values()]
     else:
         raise Exception(
             f"{chromatogram} not valid chromatogram type. Please choose "
@@ -135,8 +133,10 @@ def match_mass(candidates: list, range: tuple) -> list:
         List[float]: list of candidate m/z values that match error tolerance.
     """
     return [
-        float(mass) for mass in candidates
-        if float(mass) >= range[0] and float(mass) <= range[1]]
+        float(mass)
+        for mass in candidates
+        if float(mass) >= range[0] and float(mass) <= range[1]
+    ]
 
 
 def find_max_peak(spectrum: dict) -> tuple:
@@ -151,10 +151,14 @@ def find_max_peak(spectrum: dict) -> tuple:
             (retention time, m/z, intensity)
     """
     peaks = sorted(
-        [(float(mass), float(intensity)) for mass, intensity in spectrum.items()
-            if mass not in NON_MASS_KEYS], key=lambda x: x[1]
+        [
+            (float(mass), float(intensity))
+            for mass, intensity in spectrum.items()
+            if mass not in NON_MASS_KEYS
+        ],
+        key=lambda x: x[1],
     )
-    return (float(spectrum["retention_time"]), ) + peaks[-1]
+    return (float(spectrum["retention_time"]),) + peaks[-1]
 
 
 def sum_intensity_peaks(spectrum: dict) -> tuple:
@@ -170,7 +174,8 @@ def sum_intensity_peaks(spectrum: dict) -> tuple:
     """
     intensity = sum(
         [
-            float(spectrum[mass]) for mass in spectrum
+            float(spectrum[mass])
+            for mass in spectrum
             if mass not in NON_MASS_KEYS
         ]
     )

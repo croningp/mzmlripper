@@ -1,1 +1,1 @@
-from mzmlripper.extractor import process_mzml_file
+from .extractor import process_mzml_file

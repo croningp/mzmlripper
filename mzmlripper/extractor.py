@@ -16,7 +16,7 @@ def process_mzml_file(
     out_dir: str,
     rt_units=None,
     int_threshold=1000,
-    relative=False
+    relative=False,
 ):
     """Constructs a parser for the mzML file and extracts information
 
@@ -36,5 +36,5 @@ def process_mzml_file(
         out_dir,
         rt_units=rt_units,
         int_threshold=int_threshold,
-        relative_intensity=relative
+        relative_intensity=relative,
     ).parse_file()
