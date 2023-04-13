@@ -1,3 +1,11 @@
+# Release 1.4.0
+
+* Module was made more universal to extract MS data from any 
+up to MSn level. For MSn, information about parents added as:
+"precursors": [MS1, MS2, ..., MSn-1]. Further added "parent_scan"
+number for every parent (coresponding to the MSx level) and the 
+precursor scans.  
+
 # Release 1.3.1
 
 * Fixed issue with certain custom phrases would interfere with the parsing
