@@ -13,20 +13,21 @@ import logging
 from typing import Optional
 
 ANSI_COLORS = {
-    'black': '\u001b[30m',
-    'red': '\u001b[31m',
-    'green': '\u001b[32m',
-    'yellow': '\u001b[33m',
-    'blue': '\u001b[34m',
-    'magenta': '\u001b[35m',
-    'cyan': '\u001b[36m',
-    'white': '\u001b[37m',
-    'bold': '\u001b[1m',
-    'reset': '\u001b[0m'
+    "black": "\u001b[30m",
+    "red": "\u001b[31m",
+    "green": "\u001b[32m",
+    "yellow": "\u001b[33m",
+    "blue": "\u001b[34m",
+    "magenta": "\u001b[35m",
+    "cyan": "\u001b[36m",
+    "white": "\u001b[37m",
+    "bold": "\u001b[1m",
+    "reset": "\u001b[0m",
 }
 
+
 def colour_item(
-    msg: str, color: Optional[str] = '', bold: Optional[bool] = False
+    msg: str, color: Optional[str] = "", bold: Optional[bool] = False
 ) -> str:
     """Colours a message with an ANSI color and escapes it at the end.
     Options for bold text.
@@ -40,15 +41,17 @@ def colour_item(
         str: ANSI formatted message
     """
 
-    color = ANSI_COLORS[color] if color in ANSI_COLORS else ''
+    color = ANSI_COLORS[color] if color in ANSI_COLORS else ""
 
     return (
-        f'{color}{ANSI_COLORS["bold"]}{msg}{ANSI_COLORS["reset"]}' if bold
+        f'{color}{ANSI_COLORS["bold"]}{msg}{ANSI_COLORS["reset"]}'
+        if bold
         else f'{color}{msg}{ANSI_COLORS["reset"]}'
     )
 
+
 def make_logger(
-    name: str, filename: Optional[str] = '', debug: Optional[bool] = False
+    name: str, filename: Optional[str] = "", debug: Optional[bool] = False
 ) -> logging.Logger:
     """Creates a logger using the custom ProtoFormatter with options for
     file output.
@@ -113,24 +116,24 @@ class ProtoFormatter(logging.Formatter):
 
         # Colour level name depending on level severity
         if levelno == logging.DEBUG:
-            level = colour_item(level, color='red')
+            level = colour_item(level, color="red")
         elif levelno == logging.INFO:
-            level = colour_item(level, color='green')
+            level = colour_item(level, color="green")
         elif levelno == logging.WARN:
-            level = colour_item(level, color='yellow', bold=True)
-            msg = colour_item(msg, color='yellow')
+            level = colour_item(level, color="yellow", bold=True)
+            msg = colour_item(msg, color="yellow")
         elif levelno == logging.ERROR:
-            level = colour_item(level, color='red', bold=True)
-            msg = colour_item(msg, color='red', bold=True)
+            level = colour_item(level, color="red", bold=True)
+            msg = colour_item(msg, color="red", bold=True)
         elif levelno == logging.CRITICAL:
-            level = colour_item(level, color='red', bold=True)
-            msg = colour_item(msg, color='red')
+            level = colour_item(level, color="red", bold=True)
+            msg = colour_item(msg, color="red")
 
         # Log the current time
-        timestamp = time.strftime('%d-%m-%Y|%H:%M:%S')
+        timestamp = time.strftime("%d-%m-%Y|%H:%M:%S")
 
         # Colour the logger name
-        name = colour_item(record.name, color='cyan')
+        name = colour_item(record.name, color="cyan")
 
         # Formatted message
-        return f'[{timestamp}] - {name}::{level} -- {msg}'
+        return f"[{timestamp}] - {name}::{level} -- {msg}"
