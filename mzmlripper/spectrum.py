@@ -15,7 +15,7 @@ from typing import Dict
 
 #  list of spectrum keys that do not correspond to individual ions with specific
 #  m/z and intensity values
-NON_MASS_KEYS = ["mass_list", "retention_time", "parent", "scan", "parent_scan"]
+NON_MASS_KEYS = ["mass_list", "retention_time", "parent", "scan", "parent_scan", "hcd"]
 
 
 class UnsupportedCompressionMethod(Exception):
@@ -50,6 +50,7 @@ class Spectrum(object):
         self.serialized = {}
         self.intensity_threshold = intensity_threshold
         self.relative = relative
+        self.hcd = ""
 
     def _set_data_type(self):
         """Sets the data type of the binary data within
@@ -151,6 +152,8 @@ class Spectrum(object):
         out["retention_time"] = self.retention_time
 
         out["scan"] = self.scan
+
+        out['hcd'] = self.hcd
 
         # Set the parent mass if applicable
         if self.parent_mass:
